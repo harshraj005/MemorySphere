@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -102,7 +103,7 @@ export default function SubscriptionScreen() {
       }
 
       if (data.url) {
-        window.open(data.url, '_blank');
+        Linking.openURL(data.url);
       }
     } catch (error: any) {
       console.error('Error creating checkout session:', error);
