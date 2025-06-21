@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';  // <-- change here
 import { useAuth } from '@/contexts/AuthContext';
 import { stripeProducts } from '@/src/stripe-config';
 
@@ -47,11 +47,13 @@ export function useSubscription() {
   const checkSubscriptionStatus = async () => {
     if (!user) return;
 
+    const supabase = getSupabase();  // <-- get supabase client here
+
     try {
       const { data: subscription, error } = await supabase
         .from('stripe_user_subscriptions')
         .select('*')
-        .eq('user_id', user.id)       // Filter by user id
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
@@ -59,7 +61,6 @@ export function useSubscription() {
       }
 
       if (!subscription) {
-        // No subscription found, reset status accordingly
         setStatus({
           isActive: false,
           isTrialing: false,
@@ -97,7 +98,6 @@ export function useSubscription() {
       });
     } catch (error) {
       console.error('Error checking subscription status:', error);
-      // Optionally reset status on error:
       setStatus({
         isActive: false,
         isTrialing: false,
