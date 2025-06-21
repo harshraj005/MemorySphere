@@ -15,6 +15,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { getSupabase } from '@/lib/supabase';
 import { stripeProducts } from '@/src/stripe-config';
 import { Crown, Check, Sparkles, Brain, MessageCircle, SquareCheck as CheckSquare, Shield, Star, Clock } from 'lucide-react-native';
+import { Linking, Alert } from 'react-native';
 
 interface SubscriptionData {
   subscription_status: string | null;
@@ -65,37 +66,41 @@ export default function SubscriptionScreen() {
 
     setCheckoutLoading(priceId);
 
-    try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/stripe-checkout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          price_id: priceId,
-          mode: 'subscription',
-          success_url: `${window.location.origin}/subscription-success`,
-          cancel_url: `${window.location.origin}/subscription`,
-        }),
-      });
+try {
+  // For success and cancel URLs, you need to hardcode or dynamically construct URLs
+  // React Native has no window.location, so define base URLs manually if needed:
+  const baseUrl = 'https://your-web-app-domain.com'; // replace with your real web app domain
 
-      const data = await response.json();
+  const response = await fetch(`${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/stripe-checkout`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({
+      price_id: priceId,
+      mode: 'subscription',
+      success_url: `${baseUrl}/subscription-success`,  // React Native cannot use window.location.origin
+      cancel_url: `${baseUrl}/subscription`,
+    }),
+  });
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create checkout session');
-      }
+  const data = await response.json();
 
-      if (data.url) {
-        window.open(data.url, '_blank');
-      }
-    } catch (error: any) {
-      console.error('Error creating checkout session:', error);
-      Alert.alert('Error', error.message || 'Failed to start subscription process');
-    } finally {
-      setCheckoutLoading(null);
-    }
-  };
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to create checkout session');
+  }
+
+  if (data.url) {
+    await Linking.openURL(data.url); // open Stripe checkout URL in device browser
+  }
+} catch (error: any) {
+  console.error('Error creating checkout session:', error);
+  Alert.alert('Error', error.message || 'Failed to start subscription process');
+} finally {
+  setCheckoutLoading(null);
+}
+
 
   const handleManageSubscription = () => {
     Alert.alert(
