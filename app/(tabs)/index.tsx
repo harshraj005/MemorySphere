@@ -12,7 +12,7 @@ import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSubscription } from '@/hooks/useSubscription';
-import { supabase, Memory, Task } from '@/lib/supabase';
+import { getSupabase, Memory, Task } from '@/lib/supabase';
 import { Brain, MessageCircle, SquareCheck as CheckSquare, Sparkles, Calendar, Target, TrendingUp } from 'lucide-react-native';
 
 export default function HomeScreen() {
@@ -38,6 +38,8 @@ export default function HomeScreen() {
 
   const loadData = async () => {
     try {
+      const supabase = getSupabase();
+      
       // Load recent memories
       const { data: memoriesData } = await supabase
         .from('memories')

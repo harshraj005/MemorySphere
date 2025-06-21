@@ -12,7 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 import { stripeProducts } from '@/src/stripe-config';
 import { Crown, Check, Sparkles, Brain, MessageCircle, SquareCheck as CheckSquare, Shield, Star, Clock } from 'lucide-react-native';
 
@@ -38,6 +38,7 @@ export default function SubscriptionScreen() {
 
   const loadSubscription = async () => {
     try {
+      const supabase = getSupabase();
       const { data, error } = await supabase
         .from('stripe_user_subscriptions')
         .select('subscription_status, price_id, current_period_end, cancel_at_period_end')

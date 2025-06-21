@@ -10,7 +10,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 import { stripeProducts } from '@/src/stripe-config';
 import { CircleCheck as CheckCircle, Crown, Sparkles } from 'lucide-react-native';
 
@@ -33,6 +33,7 @@ export default function SubscriptionSuccessScreen() {
 
   const checkSubscription = async () => {
     try {
+      const supabase = getSupabase();
       const { data, error } = await supabase
         .from('stripe_user_subscriptions')
         .select('subscription_status, price_id')

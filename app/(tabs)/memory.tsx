@@ -12,7 +12,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { supabase, Memory } from '@/lib/supabase';
+import { getSupabase, Memory } from '@/lib/supabase';
 import { 
   Brain, 
   Search, 
@@ -50,6 +50,7 @@ export default function MemoryScreen() {
 
   const loadMemories = async () => {
     try {
+      const supabase = getSupabase();
       const { data, error } = await supabase
         .from('memories')
         .select('*')
@@ -100,6 +101,8 @@ export default function MemoryScreen() {
     }
 
     try {
+      const supabase = getSupabase();
+      
       // Auto-generate tags using simple keyword extraction
       const tags = extractTags(newMemory.content);
 

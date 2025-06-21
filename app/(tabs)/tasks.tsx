@@ -12,7 +12,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { supabase, Task } from '@/lib/supabase';
+import { getSupabase, Task } from '@/lib/supabase';
 import { SquareCheck as CheckSquare, Plus, Calendar, Clock, CircleAlert as AlertCircle, Target, Trash2, CreditCard as Edit3, Sparkles } from 'lucide-react-native';
 
 export default function TasksScreen() {
@@ -37,6 +37,7 @@ export default function TasksScreen() {
 
   const loadTasks = async () => {
     try {
+      const supabase = getSupabase();
       const { data, error } = await supabase
         .from('tasks')
         .select('*')
@@ -107,6 +108,7 @@ export default function TasksScreen() {
     }
 
     try {
+      const supabase = getSupabase();
       const { error } = await supabase
         .from('tasks')
         .insert({
@@ -130,6 +132,7 @@ export default function TasksScreen() {
 
   const toggleTask = async (taskId: string, completed: boolean) => {
     try {
+      const supabase = getSupabase();
       const { error } = await supabase
         .from('tasks')
         .update({ completed: !completed })
@@ -153,6 +156,7 @@ export default function TasksScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+              const supabase = getSupabase();
               const { error } = await supabase
                 .from('tasks')
                 .delete()
