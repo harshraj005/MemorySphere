@@ -29,6 +29,18 @@ export function useSubscription() {
   useEffect(() => {
     if (user) {
       checkSubscriptionStatus();
+    } else {
+      // Reset status if no user
+      setStatus({
+        isActive: false,
+        isTrialing: false,
+        trialEndsAt: null,
+        trialDaysLeft: 0,
+        hasAccess: false,
+        subscription: null,
+        currentProduct: null,
+      });
+      setLoading(false);
     }
   }, [user]);
 
@@ -36,27 +48,42 @@ export function useSubscription() {
     if (!user) return;
 
     try {
-      // Check Stripe subscription
       const { data: subscription, error } = await supabase
         .from('stripe_user_subscriptions')
         .select('*')
+        .eq('user_id', user.id)       // Filter by user id
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading subscription:', error);
       }
 
+      if (!subscription) {
+        // No subscription found, reset status accordingly
+        setStatus({
+          isActive: false,
+          isTrialing: false,
+          trialEndsAt: null,
+          trialDaysLeft: 0,
+          hasAccess: false,
+          subscription: null,
+          currentProduct: null,
+        });
+        return;
+      }
+
       const now = new Date();
       const trialEndsAt = user.trial_ends_at ? new Date(user.trial_ends_at) : null;
-      const trialDaysLeft = trialEndsAt ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) : 0;
+      const trialDaysLeft = trialEndsAt
+        ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+        : 0;
 
       const isTrialing = trialEndsAt ? now < trialEndsAt : false;
-      const isActive = subscription?.subscription_status === 'active';
+      const isActive = subscription.subscription_status === 'active';
       const hasAccess = isTrialing || isActive;
 
-      // Get current product info
-      const currentProduct = subscription?.price_id 
-        ? stripeProducts.find(product => product.priceId === subscription.price_id)
+      const currentProduct = subscription.price_id
+        ? stripeProducts.find(product => product.priceId === subscription.price_id) ?? null
         : null;
 
       setStatus({
@@ -70,6 +97,16 @@ export function useSubscription() {
       });
     } catch (error) {
       console.error('Error checking subscription status:', error);
+      // Optionally reset status on error:
+      setStatus({
+        isActive: false,
+        isTrialing: false,
+        trialEndsAt: null,
+        trialDaysLeft: 0,
+        hasAccess: false,
+        subscription: null,
+        currentProduct: null,
+      });
     } finally {
       setLoading(false);
     }
