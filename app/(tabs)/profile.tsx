@@ -7,19 +7,25 @@ import {
   StyleSheet,
   Alert,
   Switch,
+  TextInput,
+  Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSubscription } from '@/hooks/useSubscription';
-import { User, Settings, Download, Shield, CircleHelp as HelpCircle, LogOut, Moon, Sun, Crown, Mail, Calendar, Trash2, ChevronRight } from 'lucide-react-native';
+import { getSupabase } from '@/lib/supabase';
+import { User, Settings, Download, Shield, CircleHelp as HelpCircle, LogOut, Moon, Sun, Crown, Mail, Calendar, Trash2, ChevronRight, X } from 'lucide-react-native';
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const { colors, theme, themePreference, setThemePreference } = useTheme();
   const { status } = useSubscription();
   const [loading, setLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   const handleSignOut = () => {
     Alert.alert(
@@ -55,27 +61,84 @@ export default function ProfileScreen() {
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete Account',
-      'This action cannot be undone. All your memories, tasks, and data will be permanently deleted.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert(
-              'Final Confirmation',
-              'Type "DELETE" to confirm account deletion.',
-              [
-                { text: 'Cancel' },
-                { text: 'Confirm', style: 'destructive' },
-              ]
-            );
-          },
-        },
-      ]
-    );
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteAccount = async () => {
+    if (deleteConfirmation.toUpperCase() !== 'DELETE') {
+      Alert.alert('Error', 'Please type "DELETE" to confirm account deletion.');
+      return;
+    }
+
+    setDeleting(true);
+
+    try {
+      const supabase = getSupabase();
+      
+      // Delete user data in order (due to foreign key constraints)
+      // 1. Delete memories
+      await supabase
+        .from('memories')
+        .delete()
+        .eq('user_id', user!.id);
+
+      // 2. Delete tasks
+      await supabase
+        .from('tasks')
+        .delete()
+        .eq('user_id', user!.id);
+
+      // 3. Delete subscriptions
+      await supabase
+        .from('subscriptions')
+        .delete()
+        .eq('user_id', user!.id);
+
+      // 4. Soft delete stripe customers (mark as deleted)
+      await supabase
+        .from('stripe_customers')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('user_id', user!.id);
+
+      // 5. Delete user profile
+      await supabase
+        .from('users')
+        .delete()
+        .eq('id', user!.id);
+
+      // 6. Delete auth user (this will sign them out automatically)
+      const { error: authError } = await supabase.auth.admin.deleteUser(user!.id);
+      
+      if (authError) {
+        console.error('Error deleting auth user:', authError);
+        // Continue anyway as the profile data is already deleted
+      }
+
+      // Sign out and redirect
+      await signOut();
+      
+      Alert.alert(
+        'Account Deleted',
+        'Your account and all associated data have been permanently deleted.',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.replace('/(auth)/login')
+          }
+        ]
+      );
+
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      Alert.alert(
+        'Error',
+        'Failed to delete account. Please try again or contact support.'
+      );
+    } finally {
+      setDeleting(false);
+      setShowDeleteModal(false);
+      setDeleteConfirmation('');
+    }
   };
 
   const getThemeIcon = () => {
@@ -104,169 +167,239 @@ export default function ProfileScreen() {
   const styles = createStyles(colors);
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
-      <LinearGradient
-        colors={colors.gradient}
-        style={styles.header}
+    <>
+      <ScrollView style={styles.container}>
+        {/* Header */}
+        <LinearGradient
+          colors={colors.gradient}
+          style={styles.header}
+        >
+          <View style={styles.profileInfo}>
+            <View style={styles.avatar}>
+              <User size={32} color={colors.background} strokeWidth={2} />
+            </View>
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>
+                {user?.first_name} {user?.last_name}
+              </Text>
+              <Text style={styles.userEmail}>{user?.email}</Text>
+              {status.isActive && (
+                <View style={styles.premiumBadge}>
+                  <Crown size={12} color={colors.accent} />
+                  <Text style={styles.premiumText}>Premium</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </LinearGradient>
+
+        {/* Stats */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Account Stats</Text>
+          <View style={styles.statsContainer}>
+            <View style={styles.statCard}>
+              <Text style={styles.statNumber}>0</Text>
+              <Text style={styles.statLabel}>Memories</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statNumber}>0</Text>
+              <Text style={styles.statLabel}>Tasks</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statNumber}>
+                {user?.created_at ? Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0}
+              </Text>
+              <Text style={styles.statLabel}>Days Active</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Settings */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Settings</Text>
+          <View style={styles.settingsList}>
+            {/* Theme */}
+            <TouchableOpacity style={styles.settingItem} onPress={handleThemeChange}>
+              <View style={styles.settingLeft}>
+                <View style={styles.settingIcon}>
+                  {React.createElement(getThemeIcon(), { size: 20, color: colors.primary })}
+                </View>
+                <View>
+                  <Text style={styles.settingTitle}>Theme</Text>
+                  <Text style={styles.settingSubtitle}>{getThemeText()}</Text>
+                </View>
+              </View>
+              <ChevronRight size={20} color={colors.textLight} />
+            </TouchableOpacity>
+
+            {/* Subscription */}
+            <TouchableOpacity 
+              style={styles.settingItem}
+              onPress={() => router.push('/(tabs)/subscription')}
+            >
+              <View style={styles.settingLeft}>
+                <View style={styles.settingIcon}>
+                  <Crown size={20} color={colors.primary} />
+                </View>
+                <View>
+                  <Text style={styles.settingTitle}>Subscription</Text>
+                  <Text style={styles.settingSubtitle}>
+                    {status.isActive ? 'Premium Active' : 
+                     status.isTrialing ? `${status.trialDaysLeft} days left` : 'Free Plan'}
+                  </Text>
+                </View>
+              </View>
+              <ChevronRight size={20} color={colors.textLight} />
+            </TouchableOpacity>
+
+            {/* Export Data */}
+            <TouchableOpacity style={styles.settingItem} onPress={handleExportData}>
+              <View style={styles.settingLeft}>
+                <View style={styles.settingIcon}>
+                  <Download size={20} color={colors.primary} />
+                </View>
+                <View>
+                  <Text style={styles.settingTitle}>Export Data</Text>
+                  <Text style={styles.settingSubtitle}>Download all your memories and tasks</Text>
+                </View>
+              </View>
+              <ChevronRight size={20} color={colors.textLight} />
+            </TouchableOpacity>
+
+            {/* Privacy */}
+            <TouchableOpacity style={styles.settingItem}>
+              <View style={styles.settingLeft}>
+                <View style={styles.settingIcon}>
+                  <Shield size={20} color={colors.primary} />
+                </View>
+                <View>
+                  <Text style={styles.settingTitle}>Privacy & Security</Text>
+                  <Text style={styles.settingSubtitle}>Manage your data privacy</Text>
+                </View>
+              </View>
+              <ChevronRight size={20} color={colors.textLight} />
+            </TouchableOpacity>
+
+            {/* Help */}
+            <TouchableOpacity style={styles.settingItem}>
+              <View style={styles.settingLeft}>
+                <View style={styles.settingIcon}>
+                  <HelpCircle size={20} color={colors.primary} />
+                </View>
+                <View>
+                  <Text style={styles.settingTitle}>Help & Support</Text>
+                  <Text style={styles.settingSubtitle}>Get help and contact support</Text>
+                </View>
+              </View>
+              <ChevronRight size={20} color={colors.textLight} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Account Actions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Account</Text>
+          <View style={styles.settingsList}>
+            <TouchableOpacity style={styles.settingItem} onPress={handleSignOut}>
+              <View style={styles.settingLeft}>
+                <View style={styles.settingIcon}>
+                  <LogOut size={20} color={colors.error} />
+                </View>
+                <Text style={[styles.settingTitle, { color: colors.error }]}>Sign Out</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.settingItem} onPress={handleDeleteAccount}>
+              <View style={styles.settingLeft}>
+                <View style={styles.settingIcon}>
+                  <Trash2 size={20} color={colors.error} />
+                </View>
+                <Text style={[styles.settingTitle, { color: colors.error }]}>Delete Account</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* App Info */}
+        <View style={styles.section}>
+          <View style={styles.appInfo}>
+            <Text style={styles.appName}>MemorySphere</Text>
+            <Text style={styles.appVersion}>Version 1.0.0</Text>
+            <Text style={styles.appDescription}>
+              Your AI-powered cognitive twin for memories and productivity
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* Delete Account Modal */}
+      <Modal
+        visible={showDeleteModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowDeleteModal(false)}
       >
-        <View style={styles.profileInfo}>
-          <View style={styles.avatar}>
-            <User size={32} color={colors.background} strokeWidth={2} />
+        <View style={styles.modal}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowDeleteModal(false)}>
+              <X size={24} color={colors.textSecondary} />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Delete Account</Text>
+            <View style={{ width: 24 }} />
           </View>
-          <View style={styles.userInfo}>
-            <Text style={styles.userName}>
-              {user?.first_name} {user?.last_name}
-            </Text>
-            <Text style={styles.userEmail}>{user?.email}</Text>
-            {status.isActive && (
-              <View style={styles.premiumBadge}>
-                <Crown size={12} color={colors.accent} />
-                <Text style={styles.premiumText}>Premium</Text>
-              </View>
-            )}
-          </View>
-        </View>
-      </LinearGradient>
 
-      {/* Stats */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account Stats</Text>
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>Memories</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>Tasks</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>
-              {user?.created_at ? Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0}
-            </Text>
-            <Text style={styles.statLabel}>Days Active</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Settings */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Settings</Text>
-        <View style={styles.settingsList}>
-          {/* Theme */}
-          <TouchableOpacity style={styles.settingItem} onPress={handleThemeChange}>
-            <View style={styles.settingLeft}>
-              <View style={styles.settingIcon}>
-                {React.createElement(getThemeIcon(), { size: 20, color: colors.primary })}
-              </View>
-              <View>
-                <Text style={styles.settingTitle}>Theme</Text>
-                <Text style={styles.settingSubtitle}>{getThemeText()}</Text>
-              </View>
+          <View style={styles.modalContent}>
+            <View style={styles.warningContainer}>
+              <Trash2 size={48} color={colors.error} />
+              <Text style={styles.warningTitle}>Permanently Delete Account</Text>
+              <Text style={styles.warningText}>
+                This action cannot be undone. All your memories, tasks, and data will be permanently deleted from our servers.
+              </Text>
             </View>
-            <ChevronRight size={20} color={colors.textLight} />
-          </TouchableOpacity>
 
-          {/* Subscription */}
-          <TouchableOpacity 
-            style={styles.settingItem}
-            onPress={() => router.push('/(tabs)/subscription')}
-          >
-            <View style={styles.settingLeft}>
-              <View style={styles.settingIcon}>
-                <Crown size={20} color={colors.primary} />
-              </View>
-              <View>
-                <Text style={styles.settingTitle}>Subscription</Text>
-                <Text style={styles.settingSubtitle}>
-                  {status.isActive ? 'Premium Active' : 
-                   status.isTrialing ? `${status.trialDaysLeft} days left` : 'Free Plan'}
+            <View style={styles.confirmationContainer}>
+              <Text style={styles.confirmationLabel}>
+                Type "DELETE" to confirm account deletion:
+              </Text>
+              <TextInput
+                style={styles.confirmationInput}
+                placeholder="DELETE"
+                placeholderTextColor={colors.textLight}
+                value={deleteConfirmation}
+                onChangeText={setDeleteConfirmation}
+                autoCapitalize="characters"
+                autoCorrect={false}
+              />
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmation('');
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.deleteButton,
+                  (deleteConfirmation.toUpperCase() !== 'DELETE' || deleting) && styles.deleteButtonDisabled
+                ]}
+                onPress={confirmDeleteAccount}
+                disabled={deleteConfirmation.toUpperCase() !== 'DELETE' || deleting}
+              >
+                <Text style={styles.deleteButtonText}>
+                  {deleting ? 'Deleting...' : 'Delete Account'}
                 </Text>
-              </View>
+              </TouchableOpacity>
             </View>
-            <ChevronRight size={20} color={colors.textLight} />
-          </TouchableOpacity>
-
-          {/* Export Data */}
-          <TouchableOpacity style={styles.settingItem} onPress={handleExportData}>
-            <View style={styles.settingLeft}>
-              <View style={styles.settingIcon}>
-                <Download size={20} color={colors.primary} />
-              </View>
-              <View>
-                <Text style={styles.settingTitle}>Export Data</Text>
-                <Text style={styles.settingSubtitle}>Download all your memories and tasks</Text>
-              </View>
-            </View>
-            <ChevronRight size={20} color={colors.textLight} />
-          </TouchableOpacity>
-
-          {/* Privacy */}
-          <TouchableOpacity style={styles.settingItem}>
-            <View style={styles.settingLeft}>
-              <View style={styles.settingIcon}>
-                <Shield size={20} color={colors.primary} />
-              </View>
-              <View>
-                <Text style={styles.settingTitle}>Privacy & Security</Text>
-                <Text style={styles.settingSubtitle}>Manage your data privacy</Text>
-              </View>
-            </View>
-            <ChevronRight size={20} color={colors.textLight} />
-          </TouchableOpacity>
-
-          {/* Help */}
-          <TouchableOpacity style={styles.settingItem}>
-            <View style={styles.settingLeft}>
-              <View style={styles.settingIcon}>
-                <HelpCircle size={20} color={colors.primary} />
-              </View>
-              <View>
-                <Text style={styles.settingTitle}>Help & Support</Text>
-                <Text style={styles.settingSubtitle}>Get help and contact support</Text>
-              </View>
-            </View>
-            <ChevronRight size={20} color={colors.textLight} />
-          </TouchableOpacity>
+          </View>
         </View>
-      </View>
-
-      {/* Account Actions */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account</Text>
-        <View style={styles.settingsList}>
-          <TouchableOpacity style={styles.settingItem} onPress={handleSignOut}>
-            <View style={styles.settingLeft}>
-              <View style={styles.settingIcon}>
-                <LogOut size={20} color={colors.error} />
-              </View>
-              <Text style={[styles.settingTitle, { color: colors.error }]}>Sign Out</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.settingItem} onPress={handleDeleteAccount}>
-            <View style={styles.settingLeft}>
-              <View style={styles.settingIcon}>
-                <Trash2 size={20} color={colors.error} />
-              </View>
-              <Text style={[styles.settingTitle, { color: colors.error }]}>Delete Account</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* App Info */}
-      <View style={styles.section}>
-        <View style={styles.appInfo}>
-          <Text style={styles.appName}>MemorySphere</Text>
-          <Text style={styles.appVersion}>Version 1.0.0</Text>
-          <Text style={styles.appDescription}>
-            Your AI-powered cognitive twin for memories and productivity
-          </Text>
-        </View>
-      </View>
-    </ScrollView>
+      </Modal>
+    </>
   );
 }
 
@@ -413,5 +546,100 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.textLight,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  modal: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingHorizontal: 24,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  modalContent: {
+    flex: 1,
+    padding: 24,
+  },
+  warningContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  warningTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: colors.error,
+    marginTop: 16,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  warningText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  confirmationContainer: {
+    marginBottom: 32,
+  },
+  confirmationLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.text,
+    marginBottom: 12,
+  },
+  confirmationInput: {
+    height: 48,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: colors.text,
+    borderWidth: 2,
+    borderColor: colors.error,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  cancelButton: {
+    flex: 1,
+    height: 48,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.textSecondary,
+  },
+  deleteButton: {
+    flex: 1,
+    height: 48,
+    backgroundColor: colors.error,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteButtonDisabled: {
+    opacity: 0.5,
+  },
+  deleteButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.background,
   },
 });
