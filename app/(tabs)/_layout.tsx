@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Home, MessageCircle, SquareCheck as CheckSquare, User, Crown } from 'lucide-react-native';
+import { Chrome as Home, MessageCircle, SquareCheck as CheckSquare, User, Crown } from 'lucide-react-native';
 
 export default function TabsLayout() {
   const { colors } = useTheme();
