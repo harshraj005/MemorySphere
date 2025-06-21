@@ -106,20 +106,12 @@ export default function ProfileScreen() {
         .delete()
         .eq('id', user!.id);
 
-      // 6. Delete auth user (this will sign them out automatically)
-      const { error: authError } = await supabase.auth.admin.deleteUser(user!.id);
-      
-      if (authError) {
-        console.error('Error deleting auth user:', authError);
-        // Continue anyway as the profile data is already deleted
-      }
-
-      // Sign out and redirect
+      // 6. Sign out the user (this will handle the auth cleanup)
       await signOut();
       
       Alert.alert(
         'Account Deleted',
-        'Your account and all associated data have been permanently deleted.',
+        'Your account and all associated data have been permanently deleted. You have been signed out.',
         [
           {
             text: 'OK',
@@ -355,6 +347,9 @@ export default function ProfileScreen() {
               <Text style={styles.warningText}>
                 This action cannot be undone. All your memories, tasks, and data will be permanently deleted from our servers.
               </Text>
+              <Text style={styles.warningNote}>
+                Note: Your account will be signed out and you'll need to create a new account to use the app again.
+              </Text>
             </View>
 
             <View style={styles.confirmationContainer}>
@@ -587,6 +582,14 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
+    marginBottom: 12,
+  },
+  warningNote: {
+    fontSize: 14,
+    color: colors.textLight,
+    textAlign: 'center',
+    lineHeight: 20,
+    fontStyle: 'italic',
   },
   confirmationContainer: {
     marginBottom: 32,
