@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Text } from 'react-native';
 import { Brain } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -12,6 +12,7 @@ export default function IndexScreen() {
   const { colors } = useTheme();
 
   useEffect(() => {
+    // Wait for both auth and subscription to finish loading
     if (authLoading || subscriptionLoading) return;
 
     if (!user) {
@@ -19,12 +20,16 @@ export default function IndexScreen() {
       return;
     }
 
-    if (!status.hasAccess) {
-      router.replace('/locked');
-      return;
-    }
+    // Give a small delay to ensure all data is loaded
+    const timer = setTimeout(() => {
+      if (status.hasAccess) {
+        router.replace('/(tabs)');
+      } else {
+        router.replace('/locked');
+      }
+    }, 100);
 
-    router.replace('/(tabs)');
+    return () => clearTimeout(timer);
   }, [user, status.hasAccess, authLoading, subscriptionLoading]);
 
   const styles = createStyles(colors);
@@ -32,6 +37,7 @@ export default function IndexScreen() {
   return (
     <View style={styles.container}>
       <Brain size={48} color={colors.primary} />
+      <Text style={styles.loadingText}>Loading MemorySphere...</Text>
     </View>
   );
 }
@@ -42,5 +48,10 @@ const createStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.background,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    marginTop: 16,
   },
 });

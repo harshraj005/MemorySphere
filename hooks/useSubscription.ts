@@ -46,15 +46,12 @@ export function useSubscription() {
 
   const checkSubscriptionStatus = async () => {
     if (!user) {
-      console.warn('No user found. Skipping subscription check.');
       setLoading(false);
       return;
     }
 
-    const supabase = getSupabase();
-
     try {
-      // First, check if user has trial access
+      // Calculate trial status first
       const now = new Date();
       const trialEndsAt = user.trial_ends_at ? new Date(user.trial_ends_at) : null;
       const trialDaysLeft = trialEndsAt
@@ -62,7 +59,23 @@ export function useSubscription() {
         : 0;
       const isTrialing = trialEndsAt ? now < trialEndsAt : false;
 
-      // Check for active subscription via the view
+      // If user is trialing, they have access regardless of subscription status
+      if (isTrialing) {
+        setStatus({
+          isActive: false,
+          isTrialing: true,
+          trialEndsAt,
+          trialDaysLeft,
+          hasAccess: true,
+          subscription: null,
+          currentProduct: null,
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Check for active subscription only if trial has expired
+      const supabase = getSupabase();
       const { data: subscription, error } = await supabase
         .from('stripe_user_subscriptions')
         .select('*')
@@ -70,28 +83,38 @@ export function useSubscription() {
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading subscription:', error);
+        // If there's an error but user had a trial, don't block access immediately
+        setStatus({
+          isActive: false,
+          isTrialing: false,
+          trialEndsAt,
+          trialDaysLeft,
+          hasAccess: false,
+          subscription: null,
+          currentProduct: null,
+        });
+        setLoading(false);
+        return;
       }
 
       const isActive = subscription?.subscription_status === 'active';
-      const hasAccess = isTrialing || isActive;
-
       const currentProduct = subscription?.price_id
         ? stripeProducts.find(product => product.priceId === subscription.price_id) ?? null
         : null;
 
       setStatus({
         isActive,
-        isTrialing,
+        isTrialing: false,
         trialEndsAt,
         trialDaysLeft,
-        hasAccess,
+        hasAccess: isActive,
         subscription,
         currentProduct,
       });
     } catch (err) {
       console.error('Error checking subscription status:', err);
       
-      // Fallback to trial-only access if subscription check fails
+      // Fallback: check trial status even if subscription check fails
       const now = new Date();
       const trialEndsAt = user.trial_ends_at ? new Date(user.trial_ends_at) : null;
       const trialDaysLeft = trialEndsAt

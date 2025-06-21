@@ -29,12 +29,8 @@ export default function HomeScreen() {
     }
   }, [user]);
 
-  useEffect(() => {
-    // Redirect to locked screen if no access
-    if (!loading && !status.hasAccess) {
-      router.replace('/locked');
-    }
-  }, [status.hasAccess, loading]);
+  // Remove the redirect logic from here since it's handled in index.tsx
+  // This allows the home screen to render properly for users with access
 
   const loadData = async () => {
     try {
