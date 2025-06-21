@@ -44,60 +44,26 @@ export function useSubscription() {
     }
   }, [user]);
 
-  const checkSubscriptionStatus = async () => {
-    if (!user) return;
+const checkSubscriptionStatus = async () => {
+  if (!user || !user.customer_id) {
+    console.warn('Missing user or customer_id. Skipping subscription check.');
+    return;
+  }
 
-    const supabase = getSupabase();  // <-- get supabase client here
+  const supabase = getSupabase();
 
-    try {
-      const { data: subscription, error } = await supabase
-        .from('stripe_user_subscriptions')
-        .select('*')
-        .eq('customer_id', user.customer_id)
-        .maybeSingle();
+  try {
+    const { data: subscription, error } = await supabase
+      .from('stripe_user_subscriptions')
+      .select('*')
+      .eq('customer_id', user.customer_id)
+      .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading subscription:', error);
-      }
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error loading subscription:', error);
+    }
 
-      if (!subscription) {
-        setStatus({
-          isActive: false,
-          isTrialing: false,
-          trialEndsAt: null,
-          trialDaysLeft: 0,
-          hasAccess: false,
-          subscription: null,
-          currentProduct: null,
-        });
-        return;
-      }
-
-      const now = new Date();
-      const trialEndsAt = user.trial_ends_at ? new Date(user.trial_ends_at) : null;
-      const trialDaysLeft = trialEndsAt
-        ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
-        : 0;
-
-      const isTrialing = trialEndsAt ? now < trialEndsAt : false;
-      const isActive = subscription.subscription_status === 'active';
-      const hasAccess = isTrialing || isActive;
-
-      const currentProduct = subscription.price_id
-        ? stripeProducts.find(product => product.priceId === subscription.price_id) ?? null
-        : null;
-
-      setStatus({
-        isActive,
-        isTrialing,
-        trialEndsAt,
-        trialDaysLeft,
-        hasAccess,
-        subscription,
-        currentProduct,
-      });
-    } catch (error) {
-      console.error('Error checking subscription status:', error);
+    if (!subscription) {
       setStatus({
         isActive: false,
         isTrialing: false,
@@ -107,10 +73,47 @@ export function useSubscription() {
         subscription: null,
         currentProduct: null,
       });
-    } finally {
-      setLoading(false);
+      return;
     }
-  };
+
+    const now = new Date();
+    const trialEndsAt = user.trial_ends_at ? new Date(user.trial_ends_at) : null;
+    const trialDaysLeft = trialEndsAt
+      ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+      : 0;
+
+    const isTrialing = trialEndsAt ? now < trialEndsAt : false;
+    const isActive = subscription.subscription_status === 'active';
+    const hasAccess = isTrialing || isActive;
+
+    const currentProduct = subscription.price_id
+      ? stripeProducts.find(product => product.priceId === subscription.price_id) ?? null
+      : null;
+
+    setStatus({
+      isActive,
+      isTrialing,
+      trialEndsAt,
+      trialDaysLeft,
+      hasAccess,
+      subscription,
+      currentProduct,
+    });
+  } catch (err) {
+    console.error('Error checking subscription status:', err);
+    setStatus({
+      isActive: false,
+      isTrialing: false,
+      trialEndsAt: null,
+      trialDaysLeft: 0,
+      hasAccess: false,
+      subscription: null,
+      currentProduct: null,
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   const refreshStatus = () => {
     setLoading(true);
