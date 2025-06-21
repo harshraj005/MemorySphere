@@ -23,12 +23,12 @@ if (typeof window !== 'undefined') {
   supabase = createClient(supabaseUrl, supabaseAnonKey);
 }
 
-export { supabase };
+// ✅ Export getSupabase to fix the "is not a function" error
+export const getSupabase = () => supabase;
 
-// (rest of your type definitions unchanged)
-
-
+// -----------------------------
 // Database Type Definitions
+// -----------------------------
 
 export interface User {
   id: string;
