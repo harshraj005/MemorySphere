@@ -1,34 +1,51 @@
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+// ✅ Load environment variables
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-let supabase: SupabaseClient;
+// ✅ Optional: log env values for debugging
+console.log('🟡 Supabase URL:', supabaseUrl);
+console.log('🟡 Supabase Anon Key:', supabaseAnonKey ? '✔️ Loaded' : '❌ Missing');
 
-if (typeof window !== 'undefined') {
-  // Client side (React Native)
-  const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+// Define Supabase client
+let supabase: SupabaseClient | undefined;
 
-  supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      storage: AsyncStorage,
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: false,
-    },
-  });
+if (supabaseUrl && supabaseAnonKey) {
+  if (typeof window !== 'undefined') {
+    // Client-side (Expo/React Native)
+    const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+
+    supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        storage: AsyncStorage,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+      },
+    });
+  } else {
+    // Server-side or SSR (e.g., in Next.js or Web)
+    supabase = createClient(supabaseUrl, supabaseAnonKey);
+  }
 } else {
-  // Server side or SSR - no async storage
-  supabase = createClient(supabaseUrl, supabaseAnonKey);
+  console.error('❌ Supabase environment variables are missing.');
 }
 
-// ✅ Export getSupabase to fix the "is not a function" error
-export const getSupabase = () => supabase;
+// ✅ Export getSupabase function for safe access
+export const getSupabase = (): SupabaseClient => {
+  if (!supabase) {
+    throw new Error('❌ Supabase client is undefined. Check environment variables.');
+  }
+  return supabase;
+};
 
+//
 // -----------------------------
-// Database Type Definitions
+// ✅ Database Type Definitions
 // -----------------------------
+//
 
 export interface User {
   id: string;
