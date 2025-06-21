@@ -53,7 +53,7 @@ export function useSubscription() {
       const { data: subscription, error } = await supabase
         .from('stripe_user_subscriptions')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('customer_id', user.customer_id)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
