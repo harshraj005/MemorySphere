@@ -75,38 +75,19 @@ export default function ProfileScreen() {
     try {
       const supabase = getSupabase();
       
-      // Delete user data in order (due to foreign key constraints)
-      // 1. Delete memories
-      await supabase
-        .from('memories')
-        .delete()
-        .eq('user_id', user!.id);
+      // Call the database function to delete the user account completely
+      const { error } = await supabase.rpc('delete_my_account');
 
-      // 2. Delete tasks
-      await supabase
-        .from('tasks')
-        .delete()
-        .eq('user_id', user!.id);
+      if (error) {
+        console.error('Error deleting account:', error);
+        Alert.alert(
+          'Error',
+          'Failed to delete account. Please try again or contact support.'
+        );
+        return;
+      }
 
-      // 3. Delete subscriptions
-      await supabase
-        .from('subscriptions')
-        .delete()
-        .eq('user_id', user!.id);
-
-      // 4. Soft delete stripe customers (mark as deleted)
-      await supabase
-        .from('stripe_customers')
-        .update({ deleted_at: new Date().toISOString() })
-        .eq('user_id', user!.id);
-
-      // 5. Delete user profile
-      await supabase
-        .from('users')
-        .delete()
-        .eq('id', user!.id);
-
-      // 6. Sign out the user (this will handle the auth cleanup)
+      // Sign out the user (this will handle the auth cleanup on the client side)
       await signOut();
       
       Alert.alert(
@@ -348,7 +329,7 @@ export default function ProfileScreen() {
                 This action cannot be undone. All your memories, tasks, and data will be permanently deleted from our servers.
               </Text>
               <Text style={styles.warningNote}>
-                Note: Your account will be signed out and you'll need to create a new account to use the app again.
+                Note: Your account will be completely removed and you'll need to create a new account to use the app again.
               </Text>
             </View>
 
