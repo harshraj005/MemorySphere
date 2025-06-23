@@ -130,6 +130,31 @@ export default function MemoryScreen() {
     }
   };
 
+  const handleDeleteMemory = (id: string) => {
+    Alert.alert(
+      'Delete Memory',
+      'Are you sure you want to delete this memory?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            const supabase = getSupabase();
+            const { error } = await supabase.from('memories').delete().eq('id', id);
+            if (error) {
+              console.error('Error deleting memory:', error.message);
+              Alert.alert('Error', 'Failed to delete memory.');
+            } else {
+              Alert.alert('Deleted', 'Memory deleted.');
+              loadMemories();
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const extractTags = (content: string): string[] => {
     // Simple tag extraction based on common keywords
     const keywords = [
@@ -276,6 +301,16 @@ export default function MemoryScreen() {
                     ))}
                   </View>
                 )}
+
+                {/* Delete Button */}
+                <TouchableOpacity
+                  onPress={() => handleDeleteMemory(memory.id)}
+                  style={{ alignSelf: 'flex-end', marginTop: 8 }}
+                >
+                  <Text style={{ color: colors.danger || '#e53935', fontSize: 12 }}>
+                    Delete
+                  </Text>
+                </TouchableOpacity>
               </View>
             ))
           ) : (
