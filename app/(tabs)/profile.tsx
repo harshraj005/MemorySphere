@@ -294,7 +294,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* App Info */}
-        <View style={styles.section}>
+       <View style={styles.section}>
   <View style={styles.appInfo}>
     <Text style={styles.appName}>MemorySphere</Text>
     <Text style={styles.appVersion}>Version 1.0.0</Text>
@@ -307,6 +307,7 @@ export default function ProfileScreen() {
   </View>
 </View>
 
+      </ScrollView>
 
       {/* Delete Account Modal */}
       <Modal
