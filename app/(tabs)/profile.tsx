@@ -295,15 +295,18 @@ export default function ProfileScreen() {
 
         {/* App Info */}
         <View style={styles.section}>
-          <View style={styles.appInfo}>
-            <Text style={styles.appName}>MemorySphere</Text>
-            <Text style={styles.appVersion}>Version 1.0.0</Text>
-            <Text style={styles.appDescription}>
-              Your AI-powered cognitive twin for memories and productivity
-            </Text>
-          </View>
-        </View>
-      </ScrollView>
+  <View style={styles.appInfo}>
+    <Text style={styles.appName}>MemorySphere</Text>
+    <Text style={styles.appVersion}>Version 1.0.0</Text>
+    <Text style={styles.appDescription}>
+      Your AI-powered cognitive twin for memories and productivity
+    </Text>
+    <Text style={styles.appDescription}>
+      Made with love with bolt.new AI
+    </Text>
+  </View>
+</View>
+
 
       {/* Delete Account Modal */}
       <Modal
