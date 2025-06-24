@@ -208,9 +208,7 @@ export default function MemoryScreen() {
       >
         <Text style={styles.headerTitle}>AI Memory Assistant</Text>
         <Text style={styles.headerSubtitle}>Ask me anything about your memories</Text>
-        
-        {/* AI Chat Input */}
-       
+              
       </LinearGradient>
 
       {/* Content */}
