@@ -210,16 +210,7 @@ export default function MemoryScreen() {
         <Text style={styles.headerSubtitle}>Ask me anything about your memories</Text>
         
         {/* AI Chat Input */}
-        <View style={styles.chatContainer}>
-          
-          <TouchableOpacity
-            style={styles.sendButton}
-            onPress={handleAIQuery}
-            disabled={!chatInput.trim()}
-          >
-            <Send size={20} color={colors.background} />
-          </TouchableOpacity>
-        </View>
+       
       </LinearGradient>
 
       {/* Content */}
