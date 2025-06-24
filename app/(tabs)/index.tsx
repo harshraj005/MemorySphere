@@ -83,7 +83,6 @@ export default function HomeScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <Brain size={48} color={colors.primary} />
         <Text style={styles.loadingText}>Loading your cognitive twin...</Text>
       </View>
     );
