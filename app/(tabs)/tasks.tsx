@@ -23,7 +23,6 @@ export default function TasksScreen() {
   const [aiInput, setAiInput] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Add Task Form
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -53,17 +52,23 @@ export default function TasksScreen() {
     }
   };
 
+  const suggestionMap: Record<string, string[]> = {
+    submit: ['Review before submission', 'Email document'],
+    meeting: ['Prepare agenda', 'Send meeting invite'],
+    call: ['Note down points to discuss', 'Send follow-up email'],
+    buy: ['Check offers online', 'Compare prices before buying'],
+    workout: ['Stretch beforehand', 'Log workout stats'],
+  };
+
   const handleAITaskParsing = () => {
     if (!aiInput.trim()) return;
 
-    // Simple AI-like parsing of natural language task input
     const input = aiInput.toLowerCase();
     const task = { ...newTask };
 
-    // Extract task title (everything after common trigger words)
-    const triggerWords = ['remind me to', 'i need to', 'don\'t forget to', 'task:', 'todo:'];
+    const triggerWords = ['remind me to', 'i need to', "don't forget to", 'task:', 'todo:'];
     let title = aiInput;
-    
+
     for (const trigger of triggerWords) {
       if (input.includes(trigger)) {
         title = aiInput.substring(input.indexOf(trigger) + trigger.length).trim();
@@ -71,17 +76,15 @@ export default function TasksScreen() {
       }
     }
 
-    // Extract priority
     if (input.includes('urgent') || input.includes('important') || input.includes('asap')) {
       task.priority = 'high';
     } else if (input.includes('low priority') || input.includes('when you have time')) {
       task.priority = 'low';
     }
 
-    // Extract due date
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
+
     if (input.includes('tomorrow')) {
       task.due_date = tomorrow.toISOString().split('T')[0];
     } else if (input.includes('next week')) {
@@ -92,7 +95,6 @@ export default function TasksScreen() {
       task.due_date = new Date().toISOString().split('T')[0];
     }
 
-    // Set the parsed task
     setNewTask({
       ...task,
       title: title.charAt(0).toUpperCase() + title.slice(1),
@@ -120,6 +122,23 @@ export default function TasksScreen() {
         });
 
       if (error) throw error;
+
+      const suggestions: string[] = [];
+      const lowerTitle = newTask.title.toLowerCase();
+      Object.keys(suggestionMap).forEach((key) => {
+        if (lowerTitle.includes(key)) {
+          suggestions.push(...suggestionMap[key]);
+        }
+      });
+
+      for (const suggestion of suggestions.slice(0, 2)) {
+        await supabase.from('tasks').insert({
+          user_id: user!.id,
+          title: suggestion,
+          priority: 'low',
+          description: '(Suggested)',
+        });
+      }
 
       setNewTask({ title: '', description: '', priority: 'medium', due_date: '' });
       setShowAddModal(false);
