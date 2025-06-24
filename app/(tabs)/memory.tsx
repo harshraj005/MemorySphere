@@ -211,14 +211,7 @@ export default function MemoryScreen() {
         
         {/* AI Chat Input */}
         <View style={styles.chatContainer}>
-          <TextInput
-            style={styles.chatInput}
-            placeholder="What did I discuss with John last week?"
-            placeholderTextColor="rgba(255, 255, 255, 0.7)"
-            value={chatInput}
-            onChangeText={setChatInput}
-            multiline
-          />
+          
           <TouchableOpacity
             style={styles.sendButton}
             onPress={handleAIQuery}
