@@ -225,6 +225,23 @@ export default function ProfileScreen() {
               <ChevronRight size={20} color={colors.textLight} />
             </TouchableOpacity>
 
+            {/* Privacy & Security */}
+            <TouchableOpacity 
+              style={styles.settingItem} 
+              onPress={() => router.push('/(tabs)/privacy')}
+            >
+              <View style={styles.settingLeft}>
+                <View style={styles.settingIcon}>
+                  <Shield size={20} color={colors.primary} />
+                </View>
+                <View>
+                  <Text style={styles.settingTitle}>Privacy & Security</Text>
+                  <Text style={styles.settingSubtitle}>Manage your data privacy</Text>
+                </View>
+              </View>
+              <ChevronRight size={20} color={colors.textLight} />
+            </TouchableOpacity>
+
             {/* Export Data */}
             <TouchableOpacity style={styles.settingItem} onPress={handleExportData}>
               <View style={styles.settingLeft}>
@@ -234,20 +251,6 @@ export default function ProfileScreen() {
                 <View>
                   <Text style={styles.settingTitle}>Export Data</Text>
                   <Text style={styles.settingSubtitle}>Download all your memories and tasks</Text>
-                </View>
-              </View>
-              <ChevronRight size={20} color={colors.textLight} />
-            </TouchableOpacity>
-
-            {/* Privacy */}
-            <TouchableOpacity style={styles.settingItem}>
-              <View style={styles.settingLeft}>
-                <View style={styles.settingIcon}>
-                  <Shield size={20} color={colors.primary} />
-                </View>
-                <View>
-                  <Text style={styles.settingTitle}>Privacy & Security</Text>
-                  <Text style={styles.settingSubtitle}>Manage your data privacy</Text>
                 </View>
               </View>
               <ChevronRight size={20} color={colors.textLight} />
