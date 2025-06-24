@@ -13,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { getSupabase, Memory, Task } from '@/lib/supabase';
-import { Brain, MessageCircle, SquareCheck as CheckSquare, Sparkles, Calendar, Target, TrendingUp } from 'lucide-react-native';
+import {  MessageCircle, SquareCheck as CheckSquare, Sparkles, Calendar, Target, TrendingUp } from 'lucide-react-native';
 
 export default function HomeScreen() {
   const { user } = useAuth();
