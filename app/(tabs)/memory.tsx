@@ -219,7 +219,7 @@ export default function MemoryScreen() {
             <Search size={20} color={colors.textLight} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search memories..."
+              placeholder="Tell mzzzz"
               placeholderTextColor={colors.textLight}
               value={searchQuery}
               onChangeText={setSearchQuery}
