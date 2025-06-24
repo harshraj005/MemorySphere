@@ -13,7 +13,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getSupabase, Task } from '@/lib/supabase';
-import { SquareCheck as CheckSquare, Plus, Calendar, Clock, CircleAlert as AlertCircle, Target, Trash2, CreditCard as Edit3, Sparkles } from 'lucide-react-native';
+import {
+  SquareCheck as CheckSquare,
+  Plus,
+  Calendar,
+  Clock,
+  CircleAlert as AlertCircle,
+  Target,
+  Trash2,
+  Sparkles,
+} from 'lucide-react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function TasksScreen() {
   const { user } = useAuth();
@@ -22,6 +32,7 @@ export default function TasksScreen() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [aiInput, setAiInput] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const [newTask, setNewTask] = useState({
     title: '',
@@ -194,19 +205,27 @@ export default function TasksScreen() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return colors.error;
-      case 'medium': return colors.warning;
-      case 'low': return colors.success;
-      default: return colors.textSecondary;
+      case 'high':
+        return colors.error;
+      case 'medium':
+        return colors.warning;
+      case 'low':
+        return colors.success;
+      default:
+        return colors.textSecondary;
     }
   };
 
   const getPriorityIcon = (priority: string) => {
     switch (priority) {
-      case 'high': return <AlertCircle size={16} color={colors.error} />;
-      case 'medium': return <Clock size={16} color={colors.warning} />;
-      case 'low': return <Target size={16} color={colors.success} />;
-      default: return null;
+      case 'high':
+        return <AlertCircle size={16} color={colors.error} />;
+      case 'medium':
+        return <Clock size={16} color={colors.warning} />;
+      case 'low':
+        return <Target size={16} color={colors.success} />;
+      default:
+        return null;
     }
   };
 
@@ -214,8 +233,8 @@ export default function TasksScreen() {
     return new Date(dueDate) < new Date();
   };
 
-  const pendingTasks = tasks.filter(task => !task.completed);
-  const completedTasks = tasks.filter(task => task.completed);
+  const pendingTasks = tasks.filter((task) => !task.completed);
+  const completedTasks = tasks.filter((task) => task.completed);
 
   const styles = createStyles(colors);
 
@@ -231,13 +250,10 @@ export default function TasksScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient
-        colors={colors.gradient}
-        style={styles.header}
-      >
+      <LinearGradient colors={colors.gradient} style={styles.header}>
         <Text style={styles.headerTitle}>AI To-Do List</Text>
         <Text style={styles.headerSubtitle}>Smart task management with natural language</Text>
-        
+
         {/* AI Task Input */}
         <View style={styles.aiContainer}>
           <View style={styles.aiInputContainer}>
@@ -275,7 +291,7 @@ export default function TasksScreen() {
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>
-              {pendingTasks.filter(t => t.due_date && isOverdue(t.due_date)).length}
+              {pendingTasks.filter((t) => t.due_date && isOverdue(t.due_date)).length}
             </Text>
             <Text style={styles.statLabel}>Overdue</Text>
           </View>
@@ -300,12 +316,14 @@ export default function TasksScreen() {
 
                   <View style={styles.taskContent}>
                     <View style={styles.taskHeader}>
-                      <Text style={[styles.taskTitle, task.completed && styles.taskTitleCompleted]}>
+                      <Text
+                        style={[styles.taskTitle, task.completed && styles.taskTitleCompleted]}
+                      >
                         {task.title}
                       </Text>
                       <View style={styles.taskActions}>
                         {getPriorityIcon(task.priority)}
-                        <TouchableOpacity 
+                        <TouchableOpacity
                           style={styles.actionButton}
                           onPress={() => deleteTask(task.id)}
                         >
@@ -321,17 +339,21 @@ export default function TasksScreen() {
                     <View style={styles.taskMeta}>
                       {task.due_date && (
                         <View style={styles.metaItem}>
-                          <Calendar size={14} color={isOverdue(task.due_date) ? colors.error : colors.textSecondary} />
-                          <Text style={[
-                            styles.metaText,
-                            isOverdue(task.due_date) && styles.overdueText
-                          ]}>
+                          <Calendar
+                            size={14}
+                            color={isOverdue(task.due_date) ? colors.error : colors.textSecondary}
+                          />
+                          <Text
+                            style={[styles.metaText, isOverdue(task.due_date) && styles.overdueText]}
+                          >
                             {new Date(task.due_date).toLocaleDateString()}
                           </Text>
                         </View>
                       )}
                       <View style={styles.metaItem}>
-                        <View style={[styles.priorityDot, { backgroundColor: getPriorityColor(task.priority) }]} />
+                        <View
+                          style={[styles.priorityDot, { backgroundColor: getPriorityColor(task.priority) }]}
+                        />
                         <Text style={styles.metaText}>{task.priority} priority</Text>
                       </View>
                     </View>
@@ -358,10 +380,8 @@ export default function TasksScreen() {
 
                   <View style={styles.taskContent}>
                     <View style={styles.taskHeader}>
-                      <Text style={[styles.taskTitle, styles.taskTitleCompleted]}>
-                        {task.title}
-                      </Text>
-                      <TouchableOpacity 
+                      <Text style={[styles.taskTitle, styles.taskTitleCompleted]}>{task.title}</Text>
+                      <TouchableOpacity
                         style={styles.actionButton}
                         onPress={() => deleteTask(task.id)}
                       >
@@ -387,20 +407,13 @@ export default function TasksScreen() {
         </ScrollView>
 
         {/* Manual Add Button */}
-        <TouchableOpacity
-          style={styles.fabButton}
-          onPress={() => setShowAddModal(true)}
-        >
+        <TouchableOpacity style={styles.fabButton} onPress={() => setShowAddModal(true)}>
           <Plus size={24} color={colors.background} />
         </TouchableOpacity>
       </View>
 
       {/* Add Task Modal */}
-      <Modal
-        visible={showAddModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-      >
+      <Modal visible={showAddModal} animationType="slide" presentationStyle="pageSheet">
         <View style={styles.modal}>
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setShowAddModal(false)}>
@@ -446,14 +459,16 @@ export default function TasksScreen() {
                     style={[
                       styles.priorityButton,
                       newTask.priority === priority && styles.priorityButtonActive,
-                      { borderColor: getPriorityColor(priority) }
+                      { borderColor: getPriorityColor(priority) },
                     ]}
                     onPress={() => setNewTask({ ...newTask, priority: priority as any })}
                   >
-                    <Text style={[
-                      styles.priorityButtonText,
-                      newTask.priority === priority && { color: getPriorityColor(priority) }
-                    ]}>
+                    <Text
+                      style={[
+                        styles.priorityButtonText,
+                        newTask.priority === priority && { color: getPriorityColor(priority) },
+                      ]}
+                    >
                       {priority.charAt(0).toUpperCase() + priority.slice(1)}
                     </Text>
                   </TouchableOpacity>
@@ -461,15 +476,34 @@ export default function TasksScreen() {
               </View>
             </View>
 
+            {/* Due Date Picker */}
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Due Date</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={colors.textLight}
-                value={newTask.due_date}
-                onChangeText={(text) => setNewTask({ ...newTask, due_date: text })}
-              />
+              <TouchableOpacity
+                style={styles.datePickerButton}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Calendar size={16} color={colors.textSecondary} />
+                <Text style={styles.datePickerText}>
+                  {newTask.due_date
+                    ? new Date(newTask.due_date).toDateString()
+                    : 'Pick a date'}
+                </Text>
+              </TouchableOpacity>
+              {showDatePicker && (
+                <DateTimePicker
+                  value={newTask.due_date ? new Date(newTask.due_date) : new Date()}
+                  mode="date"
+                  display="default"
+                  onChange={(event, selectedDate) => {
+                    setShowDatePicker(false);
+                    if (event.type === 'set' && selectedDate) {
+                      const formattedDate = selectedDate.toISOString().split('T')[0];
+                      setNewTask({ ...newTask, due_date: formattedDate });
+                    }
+                  }}
+                />
+              )}
             </View>
           </ScrollView>
         </View>
@@ -478,299 +512,311 @@ export default function TasksScreen() {
   );
 }
 
-const createStyles = (colors: any) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    marginTop: 16,
-  },
-  header: {
-    paddingTop: 60,
-    paddingBottom: 24,
-    paddingHorizontal: 24,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: colors.background,
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginBottom: 20,
-  },
-  aiContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  aiInputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-  },
-  aiInput: {
-    flex: 1,
-    height: 48,
-    color: colors.background,
-    fontSize: 16,
-    marginLeft: 12,
-  },
-  aiButton: {
-    width: 48,
-    height: 48,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  content: {
-    flex: 1,
-    padding: 24,
-  },
-  stats: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 24,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 4,
-  },
-  tasksList: {
-    flex: 1,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 16,
-  },
-  taskCard: {
-    flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  completedTaskCard: {
-    opacity: 0.7,
-  },
-  taskCheckbox: {
-    marginRight: 16,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: colors.success,
-    borderColor: colors.success,
-  },
-  taskContent: {
-    flex: 1,
-  },
-  taskHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  taskTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.text,
-    flex: 1,
-  },
-  taskTitleCompleted: {
-    textDecorationLine: 'line-through',
-    color: colors.textSecondary,
-  },
-  taskActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  actionButton: {
-    padding: 4,
-  },
-  taskDescription: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 8,
-  },
-  taskMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  metaText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginLeft: 4,
-  },
-  overdueText: {
-    color: colors.error,
-    fontWeight: '500',
-  },
-  priorityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 4,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 64,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    marginTop: 16,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: colors.textLight,
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  fabButton: {
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
-    width: 56,
-    height: 56,
-    backgroundColor: colors.primary,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  modal: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  cancelText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-  },
-  saveText: {
-    fontSize: 16,
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  modalContent: {
-    flex: 1,
-    padding: 24,
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.text,
-    marginBottom: 8,
-  },
-  textInput: {
-    height: 48,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    color: colors.text,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  textArea: {
-    height: 80,
-    paddingTop: 16,
-    textAlignVertical: 'top',
-  },
-  priorityButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  priorityButton: {
-    flex: 1,
-    height: 40,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surface,
-  },
-  priorityButtonActive: {
-    backgroundColor: colors.surface,
-  },
-  priorityButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.textSecondary,
-  },
-});
+const createStyles = (colors: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+    },
+    loadingText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      marginTop: 16,
+    },
+    header: {
+      paddingTop: 60,
+      paddingBottom: 24,
+      paddingHorizontal: 24,
+    },
+    headerTitle: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      color: colors.background,
+      marginBottom: 4,
+    },
+    headerSubtitle: {
+      fontSize: 16,
+      color: 'rgba(255, 255, 255, 0.8)',
+      marginBottom: 20,
+    },
+    aiContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    aiInputContainer: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(255, 255, 255, 0.15)',
+      borderRadius: 16,
+      paddingHorizontal: 16,
+    },
+    aiInput: {
+      flex: 1,
+      height: 48,
+      color: colors.background,
+      fontSize: 16,
+      marginLeft: 12,
+    },
+    aiButton: {
+      width: 48,
+      height: 48,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    content: {
+      flex: 1,
+      paddingHorizontal: 24,
+      paddingTop: 16,
+    },
+    stats: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 16,
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      marginHorizontal: 4,
+      borderRadius: 16,
+      padding: 12,
+      alignItems: 'center',
+    },
+    statNumber: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      color: colors.primary,
+    },
+    statLabel: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginTop: 4,
+    },
+    tasksList: {
+      flex: 1,
+    },
+    section: {
+      marginBottom: 20,
+    },
+    sectionTitle: {
+      fontSize: 22,
+      fontWeight: 'bold',
+      marginBottom: 12,
+      color: colors.textPrimary,
+    },
+    taskCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: 12,
+      marginBottom: 12,
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 12,
+    },
+    completedTaskCard: {
+      opacity: 0.6,
+    },
+    taskCheckbox: {
+      marginTop: 4,
+    },
+    checkbox: {
+      width: 24,
+      height: 24,
+      borderRadius: 6,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surface,
+    },
+    checkboxChecked: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    taskContent: {
+      flex: 1,
+    },
+    taskHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    taskTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      flexShrink: 1,
+    },
+    taskTitleCompleted: {
+      textDecorationLine: 'line-through',
+      color: colors.textSecondary,
+    },
+    taskActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    actionButton: {
+      padding: 6,
+    },
+    taskDescription: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginBottom: 8,
+    },
+    taskMeta: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 16,
+    },
+    metaItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    metaText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    overdueText: {
+      color: colors.error,
+      fontWeight: 'bold',
+    },
+    priorityDot: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 48,
+    },
+    emptyTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: colors.textSecondary,
+      marginTop: 12,
+    },
+    emptySubtitle: {
+      fontSize: 14,
+      color: colors.textLight,
+      marginTop: 4,
+      textAlign: 'center',
+      maxWidth: 220,
+    },
+    fabButton: {
+      position: 'absolute',
+      bottom: 32,
+      right: 32,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: colors.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      elevation: 4,
+      shadowColor: colors.shadow,
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 2 },
+    },
+    modal: {
+      flex: 1,
+      backgroundColor: colors.background,
+      paddingTop: 48,
+      paddingHorizontal: 24,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 24,
+    },
+    cancelText: {
+      color: colors.error,
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
+    saveText: {
+      color: colors.primary,
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: colors.textPrimary,
+    },
+    modalContent: {
+      flex: 1,
+    },
+    inputGroup: {
+      marginBottom: 20,
+    },
+    inputLabel: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginBottom: 8,
+    },
+    textInput: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      fontSize: 16,
+      color: colors.textPrimary,
+      backgroundColor: colors.surface,
+    },
+    textArea: {
+      height: 80,
+      textAlignVertical: 'top',
+    },
+    priorityButtons: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    priorityButton: {
+      flex: 1,
+      borderWidth: 1.5,
+      borderRadius: 12,
+      paddingVertical: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    priorityButtonActive: {
+      backgroundColor: 'rgba(0,0,0,0.05)',
+    },
+    priorityButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    datePickerButton: {
+      height: 48,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      paddingHorizontal: 16,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    datePickerText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+    },
+  });
