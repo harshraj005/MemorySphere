@@ -70,7 +70,7 @@ export default function MemoryScreen() {
     if (!chatInput.trim()) return;
 
     // Simulate AI response by searching memories
-    const query = chatInput.toLowerCase();
+    const query = chatInput.toLowerCase().trim();
     const relevantMemories = memories.filter(memory =>
       memory.title.toLowerCase().includes(query) ||
       memory.content.toLowerCase().includes(query) ||
