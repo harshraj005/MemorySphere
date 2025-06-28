@@ -358,7 +358,7 @@ const createStyles = (colors: any, layout: any) => StyleSheet.create({
   alignItems: 'center',
   justifyContent: 'space-between',
   paddingHorizontal: layout.padding || 16,
-  paddingVertical: 16, // reduced slightly from 20 for tighter layout
+  paddingVertical: 20, // reduced slightly from 20 for tighter layout
   backgroundColor: '#fff', // optional: define if your chat background varies
   borderTopWidth: 1,
   borderTopColor: colors.border || '#E0E0E0',
