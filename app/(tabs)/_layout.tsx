@@ -1,6 +1,14 @@
 import { Tabs } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Home as Home, MessageCircle, SquareCheck as CheckSquare, User, Crown, Shield, CircleHelp as HelpCircle } from 'lucide-react-native';
+import {
+  Home,
+  MessageCircle,
+  SquareCheck as CheckSquare,
+  User,
+  Crown,
+  Shield,
+  CircleHelp as HelpCircle,
+} from 'lucide-react-native';
 import { Platform } from 'react-native';
 
 export default function TabsLayout() {
@@ -41,10 +49,10 @@ export default function TabsLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ size, color, focused }) => (
-            <Home 
-              size={focused ? size + 2 : size} 
-              color={color} 
-              strokeWidth={focused ? 2.5 : 2} 
+            <Home
+              size={focused ? size + 2 : size}
+              color={color}
+              strokeWidth={focused ? 2.5 : 2}
             />
           ),
         }}
@@ -54,10 +62,10 @@ export default function TabsLayout() {
         options={{
           title: 'Memory',
           tabBarIcon: ({ size, color, focused }) => (
-            <MessageCircle 
-              size={focused ? size + 2 : size} 
-              color={color} 
-              strokeWidth={focused ? 2.5 : 2} 
+            <MessageCircle
+              size={focused ? size + 2 : size}
+              color={color}
+              strokeWidth={focused ? 2.5 : 2}
             />
           ),
         }}
@@ -67,10 +75,10 @@ export default function TabsLayout() {
         options={{
           title: 'Tasks',
           tabBarIcon: ({ size, color, focused }) => (
-            <CheckSquare 
-              size={focused ? size + 2 : size} 
-              color={color} 
-              strokeWidth={focused ? 2.5 : 2} 
+            <CheckSquare
+              size={focused ? size + 2 : size}
+              color={color}
+              strokeWidth={focused ? 2.5 : 2}
             />
           ),
         }}
@@ -80,43 +88,45 @@ export default function TabsLayout() {
         options={{
           title: 'Premium',
           tabBarIcon: ({ size, color, focused }) => (
-            <Crown 
-              size={focused ? size + 2 : size} 
-              color={color} 
-              strokeWidth={focused ? 2.5 : 2} 
+            <Crown
+              size={focused ? size + 2 : size}
+              color={color}
+              strokeWidth={focused ? 2.5 : 2}
             />
           ),
         }}
       />
+      {/* Help tab is hidden from tab bar */}
       <Tabs.Screen
         name="help"
         options={{
-          title: 'Help',
-          tabBarIcon: ({ size, color, focused }) => (
-            <HelpCircle 
-              size={focused ? size + 2 : size} 
-              color={color} 
-              strokeWidth={focused ? 2.5 : 2} 
-            />
-          ),
+          href: null,
         }}
       />
+      {/* Profile tab is now visible */}
       <Tabs.Screen
         name="profile"
         options={{
-          href: null, // Hide from tab bar but keep accessible via navigation
+          title: 'Profile',
+          tabBarIcon: ({ size, color, focused }) => (
+            <User
+              size={focused ? size + 2 : size}
+              color={color}
+              strokeWidth={focused ? 2.5 : 2}
+            />
+          ),
         }}
       />
       <Tabs.Screen
         name="privacy"
         options={{
-          href: null, // Hide from tab bar
+          href: null, // Hidden from tab bar
         }}
       />
       <Tabs.Screen
         name="data-retention"
         options={{
-          href: null, // Hide from tab bar
+          href: null, // Hidden from tab bar
         }}
       />
     </Tabs>
