@@ -6,15 +6,16 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   Modal,
-  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { ResponsiveContainer } from '@/components/ResponsiveContainer';
+import { ResponsiveGrid } from '@/components/ResponsiveGrid';
 import { getSupabase, Task } from '@/lib/supabase';
 import {
   SquareCheck as CheckSquare,
@@ -31,17 +32,476 @@ import {
 } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-const { width } = Dimensions.get('window');
+const createStyles = (colors: any, layout: any) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  blockedContainer: {
+    flex: 1,
+  },
+  blockedBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  blockedContent: {
+    alignItems: 'center',
+    padding: layout.padding,
+    maxWidth: 400,
+  },
+  blockedIconContainer: {
+    width: layout.isMobile ? 100 : 120,
+    height: layout.isMobile ? 100 : 120,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 32,
+  },
+  blockedTitle: {
+    fontSize: layout.fontSize.xlarge,
+    fontWeight: '700',
+    color: colors.background,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  blockedSubtitle: {
+    fontSize: layout.fontSize.medium,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
+  },
+  blockedButton: {
+    backgroundColor: colors.background,
+    borderRadius: 16,
+    paddingHorizontal: layout.isMobile ? 24 : 32,
+    paddingVertical: 16,
+  },
+  blockedButtonText: {
+    fontSize: layout.fontSize.medium,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+  },
+  loadingGradient: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  loadingText: {
+    fontSize: layout.fontSize.medium,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  header: {
+    paddingTop: 60,
+    paddingBottom: 32,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+  },
+  headerContent: {
+    marginBottom: 24,
+  },
+  headerTitle: {
+    fontSize: layout.fontSize.xlarge,
+    fontWeight: '700',
+    color: colors.background,
+    marginBottom: 8,
+    letterSpacing: -0.5,
+    textAlign: layout.isMobile ? 'center' : 'left',
+  },
+  headerSubtitle: {
+    fontSize: layout.fontSize.medium,
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontWeight: '400',
+    lineHeight: 22,
+    textAlign: layout.isMobile ? 'center' : 'left',
+  },
+  aiContainer: {
+    flexDirection: layout.isMobile ? 'column' : 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  aiInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 4,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+    minWidth: layout.isMobile ? '100%' : 'auto',
+  },
+  aiInput: {
+    flex: 1,
+    height: 48,
+    color: colors.background,
+    fontSize: layout.fontSize.medium,
+    marginLeft: 12,
+    fontWeight: '500',
+  },
+  aiButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginTop: layout.isMobile ? 12 : 0,
+  },
+  aiButtonGradient: {
+    width: layout.isMobile ? '100%' : 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: layout.isMobile ? 120 : 48,
+    flexDirection: layout.isMobile ? 'row' : 'column',
+    gap: layout.isMobile ? 8 : 0,
+  },
+  aiButtonText: {
+    color: colors.background,
+    fontSize: layout.fontSize.small,
+    fontWeight: '600',
+  },
+  content: {
+    flex: 1,
+    paddingTop: 24,
+  },
+  stats: {
+    marginBottom: 24,
+    gap: 12,
+  },
+  statCard: {
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+    minWidth: layout.isMobile ? 100 : 120,
+  },
+  statNumber: {
+    fontSize: layout.isMobile ? 24 : 28,
+    fontWeight: '700',
+    color: colors.primary,
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: layout.fontSize.small,
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  tasksList: {
+    flex: 1,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: layout.fontSize.large,
+    fontWeight: '700',
+    marginBottom: 16,
+    color: colors.text,
+    letterSpacing: -0.3,
+  },
+  taskCard: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  completedTaskCard: {
+    opacity: 0.7,
+  },
+  taskCheckbox: {
+    marginTop: 2,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    borderColor: colors.primary,
+  },
+  taskContent: {
+    flex: 1,
+  },
+  taskHeader: {
+    flexDirection: layout.isMobile ? 'column' : 'row',
+    justifyContent: 'space-between',
+    alignItems: layout.isMobile ? 'flex-start' : 'center',
+    marginBottom: 8,
+    gap: layout.isMobile ? 8 : 0,
+  },
+  taskTitle: {
+    fontSize: layout.fontSize.medium,
+    fontWeight: '600',
+    color: colors.text,
+    flexShrink: 1,
+  },
+  taskTitleCompleted: {
+    textDecorationLine: 'line-through',
+    color: colors.textSecondary,
+  },
+  taskActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  actionButton: {
+    padding: 6,
+  },
+  taskDescription: {
+    fontSize: layout.fontSize.small,
+    color: colors.textSecondary,
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  taskMeta: {
+    flexDirection: layout.isMobile ? 'column' : 'row',
+    alignItems: layout.isMobile ? 'flex-start' : 'center',
+    gap: layout.isMobile ? 8 : 16,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  metaText: {
+    fontSize: layout.fontSize.small,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  overdueText: {
+    color: colors.error,
+    fontWeight: '600',
+  },
+  priorityDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  emptyContainer: {
+    borderRadius: 20,
+    padding: layout.isMobile ? 32 : 40,
+    alignItems: 'center',
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  emptyIconContainer: {
+    width: layout.isMobile ? 64 : 80,
+    height: layout.isMobile ? 64 : 80,
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  emptyTitle: {
+    fontSize: layout.fontSize.large,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: layout.fontSize.small,
+    color: colors.textLight,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  emptyAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary + '15',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  emptyActionText: {
+    fontSize: layout.fontSize.small,
+    color: colors.primary,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+  fabButton: {
+    position: 'absolute',
+    bottom: 32,
+    right: 32,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  fabGradient: {
+    width: 56,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modal: {
+    flex: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingHorizontal: layout.padding,
+    paddingBottom: 20,
+  },
+  modalCloseButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalTitle: {
+    fontSize: layout.fontSize.large,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  modalSaveButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  modalSaveGradient: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  saveText: {
+    fontSize: layout.fontSize.medium,
+    color: colors.background,
+    fontWeight: '600',
+  },
+  modalContent: {
+    flex: 1,
+    paddingHorizontal: layout.padding,
+  },
+  inputGroup: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  inputLabel: {
+    fontSize: layout.fontSize.medium,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 12,
+  },
+  textInput: {
+    fontSize: layout.fontSize.medium,
+    color: colors.text,
+    fontWeight: '500',
+  },
+  textArea: {
+    height: layout.isMobile ? 80 : 100,
+    textAlignVertical: 'top',
+  },
+  priorityButtons: {
+    flexDirection: layout.isMobile ? 'column' : 'row',
+    gap: 12,
+  },
+  priorityButton: {
+    flex: 1,
+    borderWidth: 2,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    minHeight: 48,
+  },
+  priorityButtonActive: {
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  priorityButtonText: {
+    fontSize: layout.fontSize.medium,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  datePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+  },
+  datePickerText: {
+    fontSize: layout.fontSize.medium,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  errorContainer: {
+    backgroundColor: colors.primary + '15',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
+  },
+  errorText: {
+    color: colors.primary,
+    fontSize: layout.fontSize.small,
+    fontWeight: '500',
+  },
+});
 
 export default function TasksScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
   const { status } = useSubscription();
+  const layout = useResponsiveLayout();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [aiInput, setAiInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [newTask, setNewTask] = useState({
     title: '',
@@ -82,6 +542,7 @@ export default function TasksScreen() {
       setTasks(data || []);
     } catch (error) {
       console.error('Error loading tasks:', error);
+      setError('Failed to load tasks. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -97,14 +558,7 @@ export default function TasksScreen() {
 
   const handleAITaskParsing = () => {
     if (!status.hasAccess || status.accessBlocked) {
-      Alert.alert(
-        'Premium Required',
-        'AI task parsing requires an active subscription. Please upgrade to continue.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Upgrade', onPress: () => router.push('/(tabs)/subscription') }
-        ]
-      );
+      setError('AI task parsing requires an active subscription. Please upgrade to continue.');
       return;
     }
 
@@ -152,19 +606,12 @@ export default function TasksScreen() {
 
   const addTask = async () => {
     if (!status.hasAccess || status.accessBlocked) {
-      Alert.alert(
-        'Premium Required',
-        'Adding tasks requires an active subscription. Please upgrade to continue.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Upgrade', onPress: () => router.push('/(tabs)/subscription') }
-        ]
-      );
+      setError('Adding tasks requires an active subscription. Please upgrade to continue.');
       return;
     }
 
     if (!newTask.title.trim()) {
-      Alert.alert('Error', 'Please enter a task title');
+      setError('Please enter a task title');
       return;
     }
 
@@ -202,22 +649,16 @@ export default function TasksScreen() {
       setNewTask({ title: '', description: '', priority: 'medium', due_date: '' });
       setShowAddModal(false);
       loadTasks();
+      setError('Task added successfully!');
     } catch (error) {
       console.error('Error adding task:', error);
-      Alert.alert('Error', 'Failed to add task');
+      setError('Failed to add task');
     }
   };
 
   const toggleTask = async (taskId: string, completed: boolean) => {
     if (!status.hasAccess || status.accessBlocked) {
-      Alert.alert(
-        'Premium Required',
-        'Managing tasks requires an active subscription. Please upgrade to continue.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Upgrade', onPress: () => router.push('/(tabs)/subscription') }
-        ]
-      );
+      setError('Managing tasks requires an active subscription. Please upgrade to continue.');
       return;
     }
 
@@ -237,42 +678,27 @@ export default function TasksScreen() {
 
   const deleteTask = async (taskId: string) => {
     if (!status.hasAccess || status.accessBlocked) {
-      Alert.alert(
-        'Premium Required',
-        'Managing tasks requires an active subscription. Please upgrade to continue.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Upgrade', onPress: () => router.push('/(tabs)/subscription') }
-        ]
-      );
+      setError('Managing tasks requires an active subscription. Please upgrade to continue.');
       return;
     }
 
-    Alert.alert(
-      'Delete Task',
-      'Are you sure you want to delete this task?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const supabase = getSupabase();
-              const { error } = await supabase
-                .from('tasks')
-                .delete()
-                .eq('id', taskId);
+    setError('Are you sure you want to delete this task?');
+    setTimeout(async () => {
+      try {
+        const supabase = getSupabase();
+        const { error } = await supabase
+          .from('tasks')
+          .delete()
+          .eq('id', taskId);
 
-              if (error) throw error;
-              loadTasks();
-            } catch (error) {
-              console.error('Error deleting task:', error);
-            }
-          },
-        },
-      ]
-    );
+        if (error) throw error;
+        loadTasks();
+        setError('Task deleted successfully.');
+      } catch (error) {
+        console.error('Error deleting task:', error);
+        setError('Failed to delete task.');
+      }
+    }, 2000);
   };
 
   const getPriorityColor = (priority: string) => {
@@ -308,7 +734,7 @@ export default function TasksScreen() {
   const pendingTasks = tasks.filter((task) => !task.completed);
   const completedTasks = tasks.filter((task) => task.completed);
 
-  const styles = createStyles(colors);
+  const styles = createStyles(colors, layout);
 
   // Show access blocked screen if user doesn't have access
   if (status.accessBlocked || !status.hasAccess) {
@@ -318,24 +744,26 @@ export default function TasksScreen() {
           colors={colors.gradient}
           style={styles.blockedBackground}
         >
-          <View style={styles.blockedContent}>
-            <View style={styles.blockedIconContainer}>
-              <Lock size={64} color={colors.background} strokeWidth={1.5} />
+          <ResponsiveContainer>
+            <View style={styles.blockedContent}>
+              <View style={styles.blockedIconContainer}>
+                <Lock size={layout.isMobile ? 48 : 64} color={colors.background} strokeWidth={1.5} />
+              </View>
+              <Text style={styles.blockedTitle}>Task Management Restricted</Text>
+              <Text style={styles.blockedSubtitle}>
+                {status.isExpired 
+                  ? 'Your trial has expired. Subscribe to access AI-powered task management and continue organizing your productivity.'
+                  : 'Smart task management with AI parsing requires an active subscription to help you stay organized.'
+                }
+              </Text>
+              <TouchableOpacity
+                style={styles.blockedButton}
+                onPress={() => router.push('/(tabs)/subscription')}
+              >
+                <Text style={styles.blockedButtonText}>Upgrade to Premium</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.blockedTitle}>Task Management Restricted</Text>
-            <Text style={styles.blockedSubtitle}>
-              {status.isExpired 
-                ? 'Your trial has expired. Subscribe to access AI-powered task management and continue organizing your productivity.'
-                : 'Smart task management with AI parsing requires an active subscription to help you stay organized.'
-              }
-            </Text>
-            <TouchableOpacity
-              style={styles.blockedButton}
-              onPress={() => router.push('/(tabs)/subscription')}
-            >
-              <Text style={styles.blockedButtonText}>Upgrade to Premium</Text>
-            </TouchableOpacity>
-          </View>
+          </ResponsiveContainer>
         </LinearGradient>
       </View>
     );
@@ -364,47 +792,57 @@ export default function TasksScreen() {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>AI To-Do List</Text>
-          <Text style={styles.headerSubtitle}>Smart task management with natural language</Text>
-        </View>
+        <ResponsiveContainer>
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>AI To-Do List</Text>
+            <Text style={styles.headerSubtitle}>Smart task management with natural language</Text>
+          </View>
 
-        {/* AI Task Input */}
-        <View style={styles.aiContainer}>
-          <LinearGradient
-            colors={['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0.1)']}
-            style={styles.aiInputContainer}
-          >
-            <Sparkles size={20} color="rgba(255, 255, 255, 0.8)" strokeWidth={1.5} />
-            <TextInput
-              style={styles.aiInput}
-              placeholder="Remind me to call John tomorrow"
-              placeholderTextColor="rgba(255, 255, 255, 0.7)"
-              value={aiInput}
-              onChangeText={setAiInput}
-              onSubmitEditing={handleAITaskParsing}
-            />
-          </LinearGradient>
-          <TouchableOpacity
-            style={styles.aiButton}
-            onPress={handleAITaskParsing}
-            disabled={!aiInput.trim()}
-            activeOpacity={0.8}
-          >
+          {/* AI Task Input */}
+          <View style={styles.aiContainer}>
             <LinearGradient
-              colors={aiInput.trim() ? ['rgba(255, 255, 255, 0.3)', 'rgba(255, 255, 255, 0.2)'] : ['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)']}
-              style={styles.aiButtonGradient}
+              colors={['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0.1)']}
+              style={styles.aiInputContainer}
             >
-              <Plus size={20} color={colors.background} strokeWidth={2} />
+              <Sparkles size={20} color="rgba(255, 255, 255, 0.8)" strokeWidth={1.5} />
+              <TextInput
+                style={styles.aiInput}
+                placeholder="Remind me to call John tomorrow"
+                placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                value={aiInput}
+                onChangeText={setAiInput}
+                onSubmitEditing={handleAITaskParsing}
+              />
             </LinearGradient>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={styles.aiButton}
+              onPress={handleAITaskParsing}
+              disabled={!aiInput.trim()}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={aiInput.trim() ? ['rgba(255, 255, 255, 0.3)', 'rgba(255, 255, 255, 0.2)'] : ['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)']}
+                style={styles.aiButtonGradient}
+              >
+                <Plus size={20} color={colors.background} strokeWidth={2} />
+                {layout.isMobile && <Text style={styles.aiButtonText}>Add Task</Text>}
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </ResponsiveContainer>
       </LinearGradient>
 
       {/* Content */}
-      <View style={styles.content}>
+      <ResponsiveContainer style={styles.content}>
+        {/* Error Display */}
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+
         {/* Stats */}
-        <View style={styles.stats}>
+        <ResponsiveGrid minItemWidth={100} gap={12} style={styles.stats}>
           <LinearGradient
             colors={colors.cardGradient}
             style={styles.statCard}
@@ -428,7 +866,7 @@ export default function TasksScreen() {
             </Text>
             <Text style={styles.statLabel}>Overdue</Text>
           </LinearGradient>
-        </View>
+        </ResponsiveGrid>
 
         {/* Tasks List */}
         <ScrollView style={styles.tasksList} showsVerticalScrollIndicator={false}>
@@ -551,7 +989,7 @@ export default function TasksScreen() {
               style={styles.emptyContainer}
             >
               <View style={styles.emptyIconContainer}>
-                <CheckSquare size={64} color={colors.textLight} strokeWidth={1.5} />
+                <CheckSquare size={layout.isMobile ? 48 : 64} color={colors.textLight} strokeWidth={1.5} />
               </View>
               <Text style={styles.emptyTitle}>No tasks yet</Text>
               <Text style={styles.emptySubtitle}>
@@ -569,19 +1007,21 @@ export default function TasksScreen() {
         </ScrollView>
 
         {/* Manual Add Button */}
-        <TouchableOpacity 
-          style={styles.fabButton} 
-          onPress={() => setShowAddModal(true)}
-          activeOpacity={0.8}
-        >
-          <LinearGradient
-            colors={[colors.primary, colors.primaryLight]}
-            style={styles.fabGradient}
+        {!layout.isMobile && (
+          <TouchableOpacity 
+            style={styles.fabButton} 
+            onPress={() => setShowAddModal(true)}
+            activeOpacity={0.8}
           >
-            <Plus size={24} color={colors.background} strokeWidth={2} />
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
+            <LinearGradient
+              colors={[colors.primary, colors.primaryLight]}
+              style={styles.fabGradient}
+            >
+              <Plus size={24} color={colors.background} strokeWidth={2} />
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
+      </ResponsiveContainer>
 
       {/* Add Task Modal */}
       <Modal visible={showAddModal} animationType="slide" presentationStyle="pageSheet">
@@ -710,439 +1150,3 @@ export default function TasksScreen() {
     </View>
   );
 }
-
-const createStyles = (colors: any) =>
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    blockedContainer: {
-      flex: 1,
-    },
-    blockedBackground: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    blockedContent: {
-      alignItems: 'center',
-      padding: 32,
-    },
-    blockedIconContainer: {
-      width: 120,
-      height: 120,
-      backgroundColor: 'rgba(255, 255, 255, 0.15)',
-      borderRadius: 24,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 32,
-    },
-    blockedTitle: {
-      fontSize: 28,
-      fontWeight: '700',
-      color: colors.background,
-      textAlign: 'center',
-      marginBottom: 16,
-    },
-    blockedSubtitle: {
-      fontSize: 16,
-      color: 'rgba(255, 255, 255, 0.8)',
-      textAlign: 'center',
-      lineHeight: 24,
-      marginBottom: 32,
-    },
-    blockedButton: {
-      backgroundColor: colors.background,
-      borderRadius: 16,
-      paddingHorizontal: 32,
-      paddingVertical: 16,
-    },
-    blockedButtonText: {
-      fontSize: 18,
-      fontWeight: '600',
-      color: colors.primary,
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: colors.background,
-    },
-    loadingGradient: {
-      width: 80,
-      height: 80,
-      borderRadius: 20,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 20,
-    },
-    loadingText: {
-      fontSize: 16,
-      color: colors.textSecondary,
-      fontWeight: '500',
-    },
-    header: {
-      paddingTop: 60,
-      paddingBottom: 32,
-      paddingHorizontal: 24,
-      borderBottomLeftRadius: 32,
-      borderBottomRightRadius: 32,
-    },
-    headerContent: {
-      marginBottom: 24,
-    },
-    headerTitle: {
-      fontSize: 32,
-      fontWeight: '700',
-      color: colors.background,
-      marginBottom: 8,
-      letterSpacing: -0.5,
-    },
-    headerSubtitle: {
-      fontSize: 16,
-      color: 'rgba(255, 255, 255, 0.85)',
-      fontWeight: '400',
-      lineHeight: 22,
-    },
-    aiContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-    },
-    aiInputContainer: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      borderRadius: 20,
-      paddingHorizontal: 20,
-      paddingVertical: 4,
-      shadowColor: colors.shadowMedium,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.2,
-      shadowRadius: 4,
-      elevation: 4,
-    },
-    aiInput: {
-      flex: 1,
-      height: 48,
-      color: colors.background,
-      fontSize: 16,
-      marginLeft: 12,
-      fontWeight: '500',
-    },
-    aiButton: {
-      borderRadius: 16,
-      overflow: 'hidden',
-    },
-    aiButtonGradient: {
-      width: 48,
-      height: 48,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    content: {
-      flex: 1,
-      paddingHorizontal: 24,
-      paddingTop: 24,
-    },
-    stats: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 24,
-      gap: 12,
-    },
-    statCard: {
-      flex: 1,
-      borderRadius: 16,
-      padding: 20,
-      alignItems: 'center',
-      shadowColor: colors.shadowMedium,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 12,
-      elevation: 6,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    statNumber: {
-      fontSize: 28,
-      fontWeight: '700',
-      color: colors.primary,
-      marginBottom: 4,
-    },
-    statLabel: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      fontWeight: '600',
-    },
-    tasksList: {
-      flex: 1,
-    },
-    section: {
-      marginBottom: 24,
-    },
-    sectionTitle: {
-      fontSize: 22,
-      fontWeight: '700',
-      marginBottom: 16,
-      color: colors.text,
-      letterSpacing: -0.3,
-    },
-    taskCard: {
-      borderRadius: 16,
-      padding: 20,
-      marginBottom: 12,
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      gap: 16,
-      shadowColor: colors.shadowMedium,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
-      shadowRadius: 8,
-      elevation: 4,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    completedTaskCard: {
-      opacity: 0.7,
-    },
-    taskCheckbox: {
-      marginTop: 2,
-    },
-    checkbox: {
-      width: 24,
-      height: 24,
-      borderRadius: 8,
-      borderWidth: 2,
-      borderColor: colors.border,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    checkboxChecked: {
-      borderColor: colors.primary,
-    },
-    taskContent: {
-      flex: 1,
-    },
-    taskHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 8,
-    },
-    taskTitle: {
-      fontSize: 18,
-      fontWeight: '600',
-      color: colors.text,
-      flexShrink: 1,
-    },
-    taskTitleCompleted: {
-      textDecorationLine: 'line-through',
-      color: colors.textSecondary,
-    },
-    taskActions: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-    },
-    actionButton: {
-      padding: 6,
-    },
-    taskDescription: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      marginBottom: 12,
-      lineHeight: 20,
-    },
-    taskMeta: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 16,
-    },
-    metaItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-    },
-    metaText: {
-      fontSize: 12,
-      color: colors.textSecondary,
-      fontWeight: '500',
-    },
-    overdueText: {
-      color: colors.error,
-      fontWeight: '600',
-    },
-    priorityDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-    },
-    emptyContainer: {
-      borderRadius: 20,
-      padding: 40,
-      alignItems: 'center',
-      shadowColor: colors.shadowMedium,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 12,
-      elevation: 6,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    emptyIconContainer: {
-      width: 80,
-      height: 80,
-      backgroundColor: colors.surface,
-      borderRadius: 20,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 20,
-    },
-    emptyTitle: {
-      fontSize: 20,
-      fontWeight: '600',
-      color: colors.textSecondary,
-      marginBottom: 8,
-    },
-    emptySubtitle: {
-      fontSize: 14,
-      color: colors.textLight,
-      textAlign: 'center',
-      lineHeight: 20,
-      marginBottom: 24,
-    },
-    emptyAction: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: colors.primary + '15',
-      borderRadius: 12,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-    },
-    emptyActionText: {
-      fontSize: 14,
-      color: colors.primary,
-      fontWeight: '600',
-      marginLeft: 6,
-    },
-    fabButton: {
-      position: 'absolute',
-      bottom: 32,
-      right: 32,
-      borderRadius: 20,
-      overflow: 'hidden',
-      shadowColor: colors.shadowMedium,
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.3,
-      shadowRadius: 16,
-      elevation: 12,
-    },
-    fabGradient: {
-      width: 56,
-      height: 56,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    modal: {
-      flex: 1,
-    },
-    modalHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingTop: 60,
-      paddingHorizontal: 24,
-      paddingBottom: 20,
-    },
-    modalCloseButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
-      backgroundColor: colors.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    modalTitle: {
-      fontSize: 20,
-      fontWeight: '700',
-      color: colors.text,
-    },
-    modalSaveButton: {
-      borderRadius: 12,
-      overflow: 'hidden',
-    },
-    modalSaveGradient: {
-      paddingHorizontal: 20,
-      paddingVertical: 10,
-    },
-    saveText: {
-      fontSize: 16,
-      color: colors.background,
-      fontWeight: '600',
-    },
-    modalContent: {
-      flex: 1,
-      paddingHorizontal: 24,
-    },
-    inputGroup: {
-      borderRadius: 16,
-      padding: 20,
-      marginBottom: 16,
-      shadowColor: colors.shadowMedium,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
-      shadowRadius: 8,
-      elevation: 4,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    inputLabel: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: colors.text,
-      marginBottom: 12,
-    },
-    textInput: {
-      fontSize: 16,
-      color: colors.text,
-      fontWeight: '500',
-    },
-    textArea: {
-      height: 80,
-      textAlignVertical: 'top',
-    },
-    priorityButtons: {
-      flexDirection: 'row',
-      gap: 12,
-    },
-    priorityButton: {
-      flex: 1,
-      borderWidth: 2,
-      borderRadius: 12,
-      paddingVertical: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.surface,
-    },
-    priorityButtonActive: {
-      backgroundColor: 'rgba(0,0,0,0.05)',
-    },
-    priorityButtonText: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: colors.textSecondary,
-    },
-    datePickerButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-      paddingVertical: 12,
-    },
-    datePickerText: {
-      fontSize: 16,
-      color: colors.textSecondary,
-      fontWeight: '500',
-    },
-  });

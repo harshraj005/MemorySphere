@@ -6,15 +6,16 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   Modal,
-  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
+import { ResponsiveContainer } from '@/components/ResponsiveContainer';
+import { ResponsiveGrid } from '@/components/ResponsiveGrid';
 import { getSupabase, Memory } from '@/lib/supabase';
 import { 
   Brain, 
@@ -31,17 +32,418 @@ import {
   Lock,
 } from 'lucide-react-native';
 
-const { width } = Dimensions.get('window');
+const createStyles = (colors: any, layout: any) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  blockedContainer: {
+    flex: 1,
+  },
+  blockedBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  blockedContent: {
+    alignItems: 'center',
+    padding: layout.padding,
+    maxWidth: 400,
+  },
+  blockedIconContainer: {
+    width: layout.isMobile ? 100 : 120,
+    height: layout.isMobile ? 100 : 120,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 32,
+  },
+  blockedTitle: {
+    fontSize: layout.fontSize.xlarge,
+    fontWeight: '700',
+    color: colors.background,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  blockedSubtitle: {
+    fontSize: layout.fontSize.medium,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
+  },
+  blockedButton: {
+    backgroundColor: colors.background,
+    borderRadius: 16,
+    paddingHorizontal: layout.isMobile ? 24 : 32,
+    paddingVertical: 16,
+  },
+  blockedButtonText: {
+    fontSize: layout.fontSize.medium,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+  },
+  loadingGradient: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  loadingText: {
+    fontSize: layout.fontSize.medium,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  header: {
+    paddingTop: 60,
+    paddingBottom: 32,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+  },
+  headerContent: {
+    marginBottom: 24,
+  },
+  headerTitle: {
+    fontSize: layout.fontSize.xlarge,
+    fontWeight: '700',
+    color: colors.background,
+    marginBottom: 8,
+    letterSpacing: -0.5,
+    textAlign: layout.isMobile ? 'center' : 'left',
+  },
+  headerSubtitle: {
+    fontSize: layout.fontSize.medium,
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontWeight: '400',
+    lineHeight: 22,
+    textAlign: layout.isMobile ? 'center' : 'left',
+  },
+  chatContainer: {
+    flexDirection: layout.isMobile ? 'column' : 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  chatInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 4,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+    minWidth: layout.isMobile ? '100%' : 'auto',
+  },
+  chatInput: {
+    flex: 1,
+    height: 48,
+    color: colors.background,
+    fontSize: layout.fontSize.medium,
+    marginLeft: 12,
+    fontWeight: '500',
+  },
+  sendButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginTop: layout.isMobile ? 12 : 0,
+  },
+  sendButtonGradient: {
+    width: layout.isMobile ? '100%' : 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: layout.isMobile ? 120 : 48,
+  },
+  content: {
+    flex: 1,
+    paddingTop: 24,
+  },
+  controls: {
+    flexDirection: layout.isMobile ? 'column' : 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+    gap: 12,
+  },
+  searchContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+    minWidth: layout.isMobile ? '100%' : 'auto',
+  },
+  searchInput: {
+    flex: 1,
+    height: 48,
+    fontSize: layout.fontSize.medium,
+    color: colors.text,
+    marginLeft: 12,
+    fontWeight: '500',
+  },
+  addButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  addButtonGradient: {
+    width: layout.isMobile ? '100%' : 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: layout.isMobile ? 120 : 48,
+    flexDirection: layout.isMobile ? 'row' : 'column',
+    gap: layout.isMobile ? 8 : 0,
+  },
+  addButtonText: {
+    color: colors.background,
+    fontSize: layout.fontSize.small,
+    fontWeight: '600',
+  },
+  memoriesList: {
+    flex: 1,
+  },
+  memoryCard: {
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 16,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  memoryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  memoryIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  memoryInfo: {
+    flex: 1,
+  },
+  memoryTitle: {
+    fontSize: layout.fontSize.medium,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  memoryDate: {
+    fontSize: layout.fontSize.small,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  emotionIcon: {
+    fontSize: 20,
+  },
+  memoryContent: {
+    fontSize: layout.fontSize.small,
+    color: colors.textSecondary,
+    lineHeight: 22,
+    marginBottom: 16,
+  },
+  memoryMeta: {
+    flexDirection: layout.isMobile ? 'column' : 'row',
+    alignItems: layout.isMobile ? 'flex-start' : 'center',
+    marginBottom: 16,
+    gap: layout.isMobile ? 8 : 16,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  metaText: {
+    fontSize: layout.fontSize.small,
+    color: colors.textSecondary,
+    marginLeft: 6,
+    fontWeight: '500',
+  },
+  tags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  tag: {
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  tagText: {
+    fontSize: 12,
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  deleteButton: {
+    alignSelf: 'flex-end',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  deleteButtonText: {
+    color: colors.error,
+    fontSize: layout.fontSize.small,
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    borderRadius: 20,
+    padding: layout.isMobile ? 32 : 40,
+    alignItems: 'center',
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  emptyIconContainer: {
+    width: layout.isMobile ? 64 : 80,
+    height: layout.isMobile ? 64 : 80,
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  emptyTitle: {
+    fontSize: layout.fontSize.large,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: layout.fontSize.small,
+    color: colors.textLight,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  emptyAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary + '15',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  emptyActionText: {
+    fontSize: layout.fontSize.small,
+    color: colors.primary,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+  modal: {
+    flex: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingHorizontal: layout.padding,
+    paddingBottom: 20,
+  },
+  modalCloseButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalTitle: {
+    fontSize: layout.fontSize.large,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  modalSaveButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  modalSaveGradient: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  saveText: {
+    fontSize: layout.fontSize.medium,
+    color: colors.background,
+    fontWeight: '600',
+  },
+  modalContent: {
+    flex: 1,
+    paddingHorizontal: layout.padding,
+  },
+  inputGroup: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  inputLabel: {
+    fontSize: layout.fontSize.medium,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 12,
+  },
+  textInput: {
+    fontSize: layout.fontSize.medium,
+    color: colors.text,
+    fontWeight: '500',
+  },
+  textArea: {
+    height: layout.isMobile ? 80 : 100,
+    textAlignVertical: 'top',
+  },
+});
 
 export default function MemoryScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
   const { status } = useSubscription();
+  const layout = useResponsiveLayout();
   const [memories, setMemories] = useState<Memory[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [chatInput, setChatInput] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Add Memory Form
   const [newMemory, setNewMemory] = useState({
@@ -84,6 +486,7 @@ export default function MemoryScreen() {
       setMemories(data || []);
     } catch (error) {
       console.error('Error loading memories:', error);
+      setError('Failed to load memories. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -91,14 +494,7 @@ export default function MemoryScreen() {
 
   const handleAIQuery = () => {
     if (!status.hasAccess || status.accessBlocked) {
-      Alert.alert(
-        'Premium Required',
-        'AI memory queries require an active subscription. Please upgrade to continue.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Upgrade', onPress: () => router.push('/(tabs)/subscription') }
-        ]
-      );
+      setError('AI memory queries require an active subscription. Please upgrade to continue.');
       return;
     }
 
@@ -114,16 +510,9 @@ export default function MemoryScreen() {
     );
 
     if (relevantMemories.length > 0) {
-      Alert.alert(
-        'AI Memory Assistant',
-        `I found ${relevantMemories.length} relevant memories about "${chatInput}". Here's what I remember:\n\n${relevantMemories[0].title}: ${relevantMemories[0].content.substring(0, 100)}...`,
-        [{ text: 'View Details', onPress: () => {} }, { text: 'OK' }]
-      );
+      setError(`I found ${relevantMemories.length} relevant memories about "${chatInput}". Here's what I remember: ${relevantMemories[0].title}: ${relevantMemories[0].content.substring(0, 100)}...`);
     } else {
-      Alert.alert(
-        'AI Memory Assistant',
-        "I don't have any memories matching that query yet. Try adding more memories to expand my knowledge about your experiences."
-      );
+      setError("I don't have any memories matching that query yet. Try adding more memories to expand my knowledge about your experiences.");
     }
 
     setChatInput('');
@@ -131,19 +520,12 @@ export default function MemoryScreen() {
 
   const addMemory = async () => {
     if (!status.hasAccess || status.accessBlocked) {
-      Alert.alert(
-        'Premium Required',
-        'Adding memories requires an active subscription. Please upgrade to continue.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Upgrade', onPress: () => router.push('/(tabs)/subscription') }
-        ]
-      );
+      setError('Adding memories requires an active subscription. Please upgrade to continue.');
       return;
     }
 
     if (!newMemory.title.trim() || !newMemory.content.trim()) {
-      Alert.alert('Error', 'Please fill in title and content');
+      setError('Please fill in title and content');
       return;
     }
 
@@ -170,48 +552,31 @@ export default function MemoryScreen() {
       setNewMemory({ title: '', content: '', person: '', location: '', emotion: '' });
       setShowAddModal(false);
       loadMemories();
-      Alert.alert('Success', 'Memory added successfully!');
+      setError('Memory added successfully!');
     } catch (error) {
       console.error('Error adding memory:', error);
-      Alert.alert('Error', 'Failed to add memory');
+      setError('Failed to add memory');
     }
   };
 
   const handleDeleteMemory = (id: string) => {
     if (!status.hasAccess || status.accessBlocked) {
-      Alert.alert(
-        'Premium Required',
-        'Managing memories requires an active subscription. Please upgrade to continue.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Upgrade', onPress: () => router.push('/(tabs)/subscription') }
-        ]
-      );
+      setError('Managing memories requires an active subscription. Please upgrade to continue.');
       return;
     }
 
-    Alert.alert(
-      'Delete Memory',
-      'Are you sure you want to delete this memory?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            const supabase = getSupabase();
-            const { error } = await supabase.from('memories').delete().eq('id', id);
-            if (error) {
-              console.error('Error deleting memory:', error.message);
-              Alert.alert('Error', 'Failed to delete memory.');
-            } else {
-              Alert.alert('Deleted', 'Memory deleted.');
-              loadMemories();
-            }
-          },
-        },
-      ]
-    );
+    setError('Are you sure you want to delete this memory?');
+    setTimeout(async () => {
+      const supabase = getSupabase();
+      const { error } = await supabase.from('memories').delete().eq('id', id);
+      if (error) {
+        console.error('Error deleting memory:', error.message);
+        setError('Failed to delete memory.');
+      } else {
+        setError('Memory deleted.');
+        loadMemories();
+      }
+    }, 2000);
   };
 
   const extractTags = (content: string): string[] => {
@@ -247,7 +612,7 @@ export default function MemoryScreen() {
     }
   };
 
-  const styles = createStyles(colors);
+  const styles = createStyles(colors, layout);
 
   // Show access blocked screen if user doesn't have access
   if (status.accessBlocked || !status.hasAccess) {
@@ -257,24 +622,26 @@ export default function MemoryScreen() {
           colors={colors.gradient}
           style={styles.blockedBackground}
         >
-          <View style={styles.blockedContent}>
-            <View style={styles.blockedIconContainer}>
-              <Lock size={64} color={colors.background} strokeWidth={1.5} />
+          <ResponsiveContainer>
+            <View style={styles.blockedContent}>
+              <View style={styles.blockedIconContainer}>
+                <Lock size={layout.isMobile ? 48 : 64} color={colors.background} strokeWidth={1.5} />
+              </View>
+              <Text style={styles.blockedTitle}>Memory Access Restricted</Text>
+              <Text style={styles.blockedSubtitle}>
+                {status.isExpired 
+                  ? 'Your trial has expired. Subscribe to access your AI memory assistant and continue building your cognitive twin.'
+                  : 'AI memory features require an active subscription to store and query your personal memories securely.'
+                }
+              </Text>
+              <TouchableOpacity
+                style={styles.blockedButton}
+                onPress={() => router.push('/(tabs)/subscription')}
+              >
+                <Text style={styles.blockedButtonText}>Upgrade to Premium</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.blockedTitle}>Memory Access Restricted</Text>
-            <Text style={styles.blockedSubtitle}>
-              {status.isExpired 
-                ? 'Your trial has expired. Subscribe to access your AI memory assistant and continue building your cognitive twin.'
-                : 'AI memory features require an active subscription to store and query your personal memories securely.'
-              }
-            </Text>
-            <TouchableOpacity
-              style={styles.blockedButton}
-              onPress={() => router.push('/(tabs)/subscription')}
-            >
-              <Text style={styles.blockedButtonText}>Upgrade to Premium</Text>
-            </TouchableOpacity>
-          </View>
+          </ResponsiveContainer>
         </LinearGradient>
       </View>
     );
@@ -303,44 +670,63 @@ export default function MemoryScreen() {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>AI Memory Assistant</Text>
-          <Text style={styles.headerSubtitle}>Ask me anything about your memories</Text>
-        </View>
+        <ResponsiveContainer>
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>AI Memory Assistant</Text>
+            <Text style={styles.headerSubtitle}>Ask me anything about your memories</Text>
+          </View>
 
-        {/* AI Chat Input */}
-        <View style={styles.chatContainer}>
-          <LinearGradient
-            colors={['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0.1)']}
-            style={styles.chatInputContainer}
-          >
-            <Sparkles size={20} color="rgba(255, 255, 255, 0.8)" strokeWidth={1.5} />
-            <TextInput
-              style={styles.chatInput}
-              placeholder="Ask about your memories..."
-              placeholderTextColor="rgba(255, 255, 255, 0.7)"
-              value={chatInput}
-              onChangeText={setChatInput}
-              onSubmitEditing={handleAIQuery}
-            />
-          </LinearGradient>
-          <TouchableOpacity
-            style={styles.sendButton}
-            onPress={handleAIQuery}
-            disabled={!chatInput.trim()}
-          >
+          {/* AI Chat Input */}
+          <View style={styles.chatContainer}>
             <LinearGradient
-              colors={chatInput.trim() ? ['rgba(255, 255, 255, 0.3)', 'rgba(255, 255, 255, 0.2)'] : ['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)']}
-              style={styles.sendButtonGradient}
+              colors={['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0.1)']}
+              style={styles.chatInputContainer}
             >
-              <Send size={20} color={colors.background} strokeWidth={1.5} />
+              <Sparkles size={20} color="rgba(255, 255, 255, 0.8)" strokeWidth={1.5} />
+              <TextInput
+                style={styles.chatInput}
+                placeholder="Ask about your memories..."
+                placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                value={chatInput}
+                onChangeText={setChatInput}
+                onSubmitEditing={handleAIQuery}
+              />
             </LinearGradient>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={styles.sendButton}
+              onPress={handleAIQuery}
+              disabled={!chatInput.trim()}
+            >
+              <LinearGradient
+                colors={chatInput.trim() ? ['rgba(255, 255, 255, 0.3)', 'rgba(255, 255, 255, 0.2)'] : ['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)']}
+                style={styles.sendButtonGradient}
+              >
+                <Send size={20} color={colors.background} strokeWidth={1.5} />
+                {layout.isMobile && <Text style={styles.addButtonText}>Send</Text>}
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </ResponsiveContainer>
       </LinearGradient>
 
       {/* Content */}
-      <View style={styles.content}>
+      <ResponsiveContainer style={styles.content}>
+        {/* Error Display */}
+        {error && (
+          <View style={{
+            backgroundColor: colors.primary + '15',
+            borderRadius: 12,
+            padding: 16,
+            marginBottom: 20,
+            borderLeftWidth: 4,
+            borderLeftColor: colors.primary,
+          }}>
+            <Text style={{ color: colors.primary, fontSize: layout.fontSize.small, fontWeight: '500' }}>
+              {error}
+            </Text>
+          </View>
+        )}
+
         {/* Search and Add */}
         <View style={styles.controls}>
           <LinearGradient
@@ -366,6 +752,7 @@ export default function MemoryScreen() {
               style={styles.addButtonGradient}
             >
               <Plus size={24} color={colors.background} strokeWidth={2} />
+              {layout.isMobile && <Text style={styles.addButtonText}>Add Memory</Text>}
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -447,7 +834,7 @@ export default function MemoryScreen() {
               style={styles.emptyContainer}
             >
               <View style={styles.emptyIconContainer}>
-                <Brain size={64} color={colors.textLight} strokeWidth={1.5} />
+                <Brain size={layout.isMobile ? 48 : 64} color={colors.textLight} strokeWidth={1.5} />
               </View>
               <Text style={styles.emptyTitle}>No memories found</Text>
               <Text style={styles.emptySubtitle}>
@@ -463,7 +850,7 @@ export default function MemoryScreen() {
             </LinearGradient>
           )}
         </ScrollView>
-      </View>
+      </ResponsiveContainer>
 
       {/* Add Memory Modal */}
       <Modal
@@ -574,391 +961,3 @@ export default function MemoryScreen() {
     </View>
   );
 }
-
-const createStyles = (colors: any) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  blockedContainer: {
-    flex: 1,
-  },
-  blockedBackground: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  blockedContent: {
-    alignItems: 'center',
-    padding: 32,
-  },
-  blockedIconContainer: {
-    width: 120,
-    height: 120,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 32,
-  },
-  blockedTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.background,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  blockedSubtitle: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 32,
-  },
-  blockedButton: {
-    backgroundColor: colors.background,
-    borderRadius: 16,
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-  },
-  blockedButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-  },
-  loadingGradient: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  header: {
-    paddingTop: 60,
-    paddingBottom: 32,
-    paddingHorizontal: 24,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
-  headerContent: {
-    marginBottom: 24,
-  },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: colors.background,
-    marginBottom: 8,
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.85)',
-    fontWeight: '400',
-    lineHeight: 22,
-  },
-  chatContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  chatInputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 4,
-    shadowColor: colors.shadowMedium,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  chatInput: {
-    flex: 1,
-    height: 48,
-    color: colors.background,
-    fontSize: 16,
-    marginLeft: 12,
-    fontWeight: '500',
-  },
-  sendButton: {
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  sendButtonGradient: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-  },
-  controls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-    gap: 12,
-  },
-  searchContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    shadowColor: colors.shadowMedium,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  searchInput: {
-    flex: 1,
-    height: 48,
-    fontSize: 16,
-    color: colors.text,
-    marginLeft: 12,
-    fontWeight: '500',
-  },
-  addButton: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: colors.shadowMedium,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  addButtonGradient: {
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  memoriesList: {
-    flex: 1,
-  },
-  memoryCard: {
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 16,
-    shadowColor: colors.shadowMedium,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  memoryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  memoryIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  memoryInfo: {
-    flex: 1,
-  },
-  memoryTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 4,
-  },
-  memoryDate: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  emotionIcon: {
-    fontSize: 20,
-  },
-  memoryContent: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    lineHeight: 22,
-    marginBottom: 16,
-  },
-  memoryMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    gap: 16,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  metaText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginLeft: 6,
-    fontWeight: '500',
-  },
-  tags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
-  },
-  tag: {
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  tagText: {
-    fontSize: 12,
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  deleteButton: {
-    alignSelf: 'flex-end',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  deleteButtonText: {
-    color: colors.error,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  emptyContainer: {
-    borderRadius: 20,
-    padding: 40,
-    alignItems: 'center',
-    shadowColor: colors.shadowMedium,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  emptyIconContainer: {
-    width: 80,
-    height: 80,
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: colors.textLight,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
-  },
-  emptyAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary + '15',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  emptyActionText: {
-    fontSize: 14,
-    color: colors.primary,
-    fontWeight: '600',
-    marginLeft: 6,
-  },
-  modal: {
-    flex: 1,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: 24,
-    paddingBottom: 20,
-  },
-  modalCloseButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  modalSaveButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  modalSaveGradient: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-  },
-  saveText: {
-    fontSize: 16,
-    color: colors.background,
-    fontWeight: '600',
-  },
-  modalContent: {
-    flex: 1,
-    paddingHorizontal: 24,
-  },
-  inputGroup: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: colors.shadowMedium,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 12,
-  },
-  textInput: {
-    fontSize: 16,
-    color: colors.text,
-    fontWeight: '500',
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-});
