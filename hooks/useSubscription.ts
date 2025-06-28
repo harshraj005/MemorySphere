@@ -11,6 +11,8 @@ export interface SubscriptionStatus {
   hasAccess: boolean;
   subscription: any | null;
   currentProduct: any | null;
+  isExpired: boolean;
+  accessBlocked: boolean;
 }
 
 export function useSubscription() {
@@ -23,12 +25,18 @@ export function useSubscription() {
     hasAccess: false,
     subscription: null,
     currentProduct: null,
+    isExpired: false,
+    accessBlocked: false,
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
       checkSubscriptionStatus();
+      
+      // Set up interval to check subscription status every minute
+      const interval = setInterval(checkSubscriptionStatus, 60000);
+      return () => clearInterval(interval);
     } else {
       // Reset status if no user
       setStatus({
@@ -39,6 +47,8 @@ export function useSubscription() {
         hasAccess: false,
         subscription: null,
         currentProduct: null,
+        isExpired: false,
+        accessBlocked: true,
       });
       setLoading(false);
     }
@@ -51,30 +61,18 @@ export function useSubscription() {
     }
 
     try {
-      // Calculate trial status first
       const now = new Date();
       const trialEndsAt = user.trial_ends_at ? new Date(user.trial_ends_at) : null;
+      
+      // Calculate trial status with precise timing
       const trialDaysLeft = trialEndsAt
         ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
         : 0;
+      
       const isTrialing = trialEndsAt ? now < trialEndsAt : false;
+      const isTrialExpired = trialEndsAt ? now >= trialEndsAt : true;
 
-      // If user is trialing, they have access regardless of subscription status
-      if (isTrialing) {
-        setStatus({
-          isActive: false,
-          isTrialing: true,
-          trialEndsAt,
-          trialDaysLeft,
-          hasAccess: true,
-          subscription: null,
-          currentProduct: null,
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Check for active subscription only if trial has expired
+      // Check for active subscription
       const supabase = getSupabase();
       const { data: subscription, error } = await supabase
         .from('stripe_user_subscriptions')
@@ -83,15 +81,17 @@ export function useSubscription() {
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading subscription:', error);
-        // If there's an error but user had a trial, don't block access immediately
+        // On error, be restrictive with access
         setStatus({
           isActive: false,
-          isTrialing: false,
+          isTrialing: isTrialing,
           trialEndsAt,
           trialDaysLeft,
-          hasAccess: false,
+          hasAccess: isTrialing, // Only allow access if trial is still active
           subscription: null,
           currentProduct: null,
+          isExpired: isTrialExpired,
+          accessBlocked: isTrialExpired,
         });
         setLoading(false);
         return;
@@ -102,34 +102,52 @@ export function useSubscription() {
         ? stripeProducts.find(product => product.priceId === subscription.price_id) ?? null
         : null;
 
+      // Determine access based on strict rules
+      const hasAccess = isActive || isTrialing;
+      const accessBlocked = !hasAccess;
+
+      // Update user subscription status in database if trial has expired
+      if (isTrialExpired && user.subscription_status === 'trial') {
+        try {
+          await supabase
+            .from('users')
+            .update({ subscription_status: 'expired' })
+            .eq('id', user.id);
+        } catch (updateError) {
+          console.error('Error updating user subscription status:', updateError);
+        }
+      }
+
       setStatus({
         isActive,
-        isTrialing: false,
+        isTrialing,
         trialEndsAt,
         trialDaysLeft,
-        hasAccess: isActive,
+        hasAccess,
         subscription,
         currentProduct,
+        isExpired: isTrialExpired && !isActive,
+        accessBlocked,
       });
     } catch (err) {
       console.error('Error checking subscription status:', err);
       
-      // Fallback: check trial status even if subscription check fails
+      // Fallback: be very restrictive on errors
       const now = new Date();
       const trialEndsAt = user.trial_ends_at ? new Date(user.trial_ends_at) : null;
-      const trialDaysLeft = trialEndsAt
-        ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
-        : 0;
       const isTrialing = trialEndsAt ? now < trialEndsAt : false;
+      const isTrialExpired = trialEndsAt ? now >= trialEndsAt : true;
 
       setStatus({
         isActive: false,
         isTrialing,
         trialEndsAt,
-        trialDaysLeft,
-        hasAccess: isTrialing,
+        trialDaysLeft: trialEndsAt ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) : 0,
+        hasAccess: isTrialing, // Only trial access on errors
         subscription: null,
         currentProduct: null,
+        isExpired: isTrialExpired,
+        accessBlocked: isTrialExpired,
       });
     } finally {
       setLoading(false);

@@ -14,7 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { getSupabase, Memory, Task } from '@/lib/supabase';
-import { Brain, MessageCircle, SquareCheck as CheckSquare, Sparkles, Calendar, Target, TrendingUp, Plus, ArrowRight } from 'lucide-react-native';
+import { Brain, MessageCircle, SquareCheck as CheckSquare, Sparkles, Calendar, Target, TrendingUp, Plus, ArrowRight, Lock } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -32,7 +32,20 @@ export default function HomeScreen() {
     }
   }, [user]);
 
+  // Redirect to locked screen if access is blocked
+  useEffect(() => {
+    if (!status.hasAccess && status.accessBlocked && !loading) {
+      router.replace('/locked');
+    }
+  }, [status.hasAccess, status.accessBlocked, loading]);
+
   const loadData = async () => {
+    // Only load data if user has access
+    if (!status.hasAccess || status.accessBlocked) {
+      setLoading(false);
+      return;
+    }
+
     try {
       const supabase = getSupabase();
       
@@ -79,6 +92,37 @@ export default function HomeScreen() {
   };
 
   const styles = createStyles(colors);
+
+  // Show access blocked screen if user doesn't have access
+  if (status.accessBlocked || !status.hasAccess) {
+    return (
+      <View style={styles.blockedContainer}>
+        <LinearGradient
+          colors={colors.gradient}
+          style={styles.blockedBackground}
+        >
+          <View style={styles.blockedContent}>
+            <View style={styles.blockedIconContainer}>
+              <Lock size={64} color={colors.background} strokeWidth={1.5} />
+            </View>
+            <Text style={styles.blockedTitle}>Access Restricted</Text>
+            <Text style={styles.blockedSubtitle}>
+              {status.isExpired 
+                ? 'Your trial has expired. Subscribe to continue using MemorySphere.'
+                : 'You need an active subscription to access this feature.'
+              }
+            </Text>
+            <TouchableOpacity
+              style={styles.blockedButton}
+              onPress={() => router.push('/(tabs)/subscription')}
+            >
+              <Text style={styles.blockedButtonText}>View Subscription Plans</Text>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+      </View>
+    );
+  }
 
   if (loading) {
     return (
@@ -138,6 +182,29 @@ export default function HomeScreen() {
               <Sparkles size={16} color={colors.background} />
               <Text style={styles.trialText}>
                 {status.trialDaysLeft} days left in your free trial
+              </Text>
+              {status.trialDaysLeft <= 1 && (
+                <TouchableOpacity
+                  style={styles.upgradeNowButton}
+                  onPress={() => router.push('/(tabs)/subscription')}
+                >
+                  <Text style={styles.upgradeNowText}>Upgrade Now</Text>
+                </TouchableOpacity>
+              )}
+            </LinearGradient>
+          </View>
+        )}
+
+        {/* Expiration Warning */}
+        {status.trialDaysLeft <= 1 && status.isTrialing && (
+          <View style={styles.warningBanner}>
+            <LinearGradient
+              colors={['rgba(239, 68, 68, 0.2)', 'rgba(239, 68, 68, 0.1)']}
+              style={styles.warningBannerGradient}
+            >
+              <Lock size={16} color={colors.background} />
+              <Text style={styles.warningText}>
+                Trial expires soon! Subscribe to keep your data and continue using MemorySphere.
               </Text>
             </LinearGradient>
           </View>
@@ -379,6 +446,52 @@ const createStyles = (colors: any) => StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  blockedContainer: {
+    flex: 1,
+  },
+  blockedBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  blockedContent: {
+    alignItems: 'center',
+    padding: 32,
+  },
+  blockedIconContainer: {
+    width: 120,
+    height: 120,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 32,
+  },
+  blockedTitle: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: colors.background,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  blockedSubtitle: {
+    fontSize: 18,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+    lineHeight: 26,
+    marginBottom: 32,
+  },
+  blockedButton: {
+    backgroundColor: colors.background,
+    borderRadius: 16,
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+  },
+  blockedButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.primary,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -444,6 +557,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   trialBanner: {
     alignSelf: 'stretch',
+    marginBottom: 8,
   },
   trialBannerGradient: {
     flexDirection: 'row',
@@ -461,6 +575,39 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 8,
+    flex: 1,
+  },
+  upgradeNowButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  upgradeNowText: {
+    color: colors.background,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  warningBanner: {
+    alignSelf: 'stretch',
+  },
+  warningBannerGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  warningText: {
+    color: colors.background,
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+    flex: 1,
   },
   section: {
     paddingHorizontal: 24,

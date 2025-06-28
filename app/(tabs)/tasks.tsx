@@ -11,8 +11,10 @@ import {
   Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import { getSupabase, Task } from '@/lib/supabase';
 import {
   SquareCheck as CheckSquare,
@@ -25,6 +27,7 @@ import {
   Sparkles,
   X,
   Check,
+  Lock,
 } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -33,6 +36,7 @@ const { width } = Dimensions.get('window');
 export default function TasksScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { status } = useSubscription();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [aiInput, setAiInput] = useState('');
@@ -47,10 +51,25 @@ export default function TasksScreen() {
   });
 
   useEffect(() => {
-    loadTasks();
-  }, []);
+    if (user) {
+      loadTasks();
+    }
+  }, [user]);
+
+  // Redirect to locked screen if access is blocked
+  useEffect(() => {
+    if (!status.hasAccess && status.accessBlocked && !loading) {
+      router.replace('/locked');
+    }
+  }, [status.hasAccess, status.accessBlocked, loading]);
 
   const loadTasks = async () => {
+    // Only load data if user has access
+    if (!status.hasAccess || status.accessBlocked) {
+      setLoading(false);
+      return;
+    }
+
     try {
       const supabase = getSupabase();
       const { data, error } = await supabase
@@ -77,6 +96,18 @@ export default function TasksScreen() {
   };
 
   const handleAITaskParsing = () => {
+    if (!status.hasAccess || status.accessBlocked) {
+      Alert.alert(
+        'Premium Required',
+        'AI task parsing requires an active subscription. Please upgrade to continue.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Upgrade', onPress: () => router.push('/(tabs)/subscription') }
+        ]
+      );
+      return;
+    }
+
     if (!aiInput.trim()) return;
 
     const input = aiInput.toLowerCase();
@@ -120,6 +151,18 @@ export default function TasksScreen() {
   };
 
   const addTask = async () => {
+    if (!status.hasAccess || status.accessBlocked) {
+      Alert.alert(
+        'Premium Required',
+        'Adding tasks requires an active subscription. Please upgrade to continue.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Upgrade', onPress: () => router.push('/(tabs)/subscription') }
+        ]
+      );
+      return;
+    }
+
     if (!newTask.title.trim()) {
       Alert.alert('Error', 'Please enter a task title');
       return;
@@ -166,6 +209,18 @@ export default function TasksScreen() {
   };
 
   const toggleTask = async (taskId: string, completed: boolean) => {
+    if (!status.hasAccess || status.accessBlocked) {
+      Alert.alert(
+        'Premium Required',
+        'Managing tasks requires an active subscription. Please upgrade to continue.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Upgrade', onPress: () => router.push('/(tabs)/subscription') }
+        ]
+      );
+      return;
+    }
+
     try {
       const supabase = getSupabase();
       const { error } = await supabase
@@ -181,6 +236,18 @@ export default function TasksScreen() {
   };
 
   const deleteTask = async (taskId: string) => {
+    if (!status.hasAccess || status.accessBlocked) {
+      Alert.alert(
+        'Premium Required',
+        'Managing tasks requires an active subscription. Please upgrade to continue.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Upgrade', onPress: () => router.push('/(tabs)/subscription') }
+        ]
+      );
+      return;
+    }
+
     Alert.alert(
       'Delete Task',
       'Are you sure you want to delete this task?',
@@ -242,6 +309,37 @@ export default function TasksScreen() {
   const completedTasks = tasks.filter((task) => task.completed);
 
   const styles = createStyles(colors);
+
+  // Show access blocked screen if user doesn't have access
+  if (status.accessBlocked || !status.hasAccess) {
+    return (
+      <View style={styles.blockedContainer}>
+        <LinearGradient
+          colors={colors.gradient}
+          style={styles.blockedBackground}
+        >
+          <View style={styles.blockedContent}>
+            <View style={styles.blockedIconContainer}>
+              <Lock size={64} color={colors.background} strokeWidth={1.5} />
+            </View>
+            <Text style={styles.blockedTitle}>Task Management Restricted</Text>
+            <Text style={styles.blockedSubtitle}>
+              {status.isExpired 
+                ? 'Your trial has expired. Subscribe to access AI-powered task management and continue organizing your productivity.'
+                : 'Smart task management with AI parsing requires an active subscription to help you stay organized.'
+              }
+            </Text>
+            <TouchableOpacity
+              style={styles.blockedButton}
+              onPress={() => router.push('/(tabs)/subscription')}
+            >
+              <Text style={styles.blockedButtonText}>Upgrade to Premium</Text>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+      </View>
+    );
+  }
 
   if (loading) {
     return (
@@ -618,6 +716,52 @@ const createStyles = (colors: any) =>
     container: {
       flex: 1,
       backgroundColor: colors.background,
+    },
+    blockedContainer: {
+      flex: 1,
+    },
+    blockedBackground: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    blockedContent: {
+      alignItems: 'center',
+      padding: 32,
+    },
+    blockedIconContainer: {
+      width: 120,
+      height: 120,
+      backgroundColor: 'rgba(255, 255, 255, 0.15)',
+      borderRadius: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 32,
+    },
+    blockedTitle: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.background,
+      textAlign: 'center',
+      marginBottom: 16,
+    },
+    blockedSubtitle: {
+      fontSize: 16,
+      color: 'rgba(255, 255, 255, 0.8)',
+      textAlign: 'center',
+      lineHeight: 24,
+      marginBottom: 32,
+    },
+    blockedButton: {
+      backgroundColor: colors.background,
+      borderRadius: 16,
+      paddingHorizontal: 32,
+      paddingVertical: 16,
+    },
+    blockedButtonText: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.primary,
     },
     loadingContainer: {
       flex: 1,

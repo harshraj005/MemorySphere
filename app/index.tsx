@@ -22,15 +22,17 @@ export default function IndexScreen() {
 
     // Give a small delay to ensure all data is loaded
     const timer = setTimeout(() => {
-      if (status.hasAccess) {
+      // Strict access control - only allow access if user has valid subscription or active trial
+      if (status.hasAccess && !status.accessBlocked) {
         router.replace('/(tabs)');
       } else {
+        // Force user to locked screen if no access
         router.replace('/locked');
       }
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [user, status.hasAccess, authLoading, subscriptionLoading]);
+  }, [user, status.hasAccess, status.accessBlocked, authLoading, subscriptionLoading]);
 
   const styles = createStyles(colors);
 

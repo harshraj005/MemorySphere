@@ -11,8 +11,10 @@ import {
   Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import { getSupabase, Memory } from '@/lib/supabase';
 import { 
   Brain, 
@@ -26,6 +28,7 @@ import {
   Sparkles,
   Send,
   X,
+  Lock,
 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
@@ -33,6 +36,7 @@ const { width } = Dimensions.get('window');
 export default function MemoryScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
+  const { status } = useSubscription();
   const [memories, setMemories] = useState<Memory[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [chatInput, setChatInput] = useState('');
@@ -49,10 +53,25 @@ export default function MemoryScreen() {
   });
 
   useEffect(() => {
-    loadMemories();
-  }, []);
+    if (user) {
+      loadMemories();
+    }
+  }, [user]);
+
+  // Redirect to locked screen if access is blocked
+  useEffect(() => {
+    if (!status.hasAccess && status.accessBlocked && !loading) {
+      router.replace('/locked');
+    }
+  }, [status.hasAccess, status.accessBlocked, loading]);
 
   const loadMemories = async () => {
+    // Only load data if user has access
+    if (!status.hasAccess || status.accessBlocked) {
+      setLoading(false);
+      return;
+    }
+
     try {
       const supabase = getSupabase();
       const { data, error } = await supabase
@@ -71,6 +90,18 @@ export default function MemoryScreen() {
   };
 
   const handleAIQuery = () => {
+    if (!status.hasAccess || status.accessBlocked) {
+      Alert.alert(
+        'Premium Required',
+        'AI memory queries require an active subscription. Please upgrade to continue.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Upgrade', onPress: () => router.push('/(tabs)/subscription') }
+        ]
+      );
+      return;
+    }
+
     if (!chatInput.trim()) return;
 
     // Simulate AI response by searching memories
@@ -99,6 +130,18 @@ export default function MemoryScreen() {
   };
 
   const addMemory = async () => {
+    if (!status.hasAccess || status.accessBlocked) {
+      Alert.alert(
+        'Premium Required',
+        'Adding memories requires an active subscription. Please upgrade to continue.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Upgrade', onPress: () => router.push('/(tabs)/subscription') }
+        ]
+      );
+      return;
+    }
+
     if (!newMemory.title.trim() || !newMemory.content.trim()) {
       Alert.alert('Error', 'Please fill in title and content');
       return;
@@ -135,6 +178,18 @@ export default function MemoryScreen() {
   };
 
   const handleDeleteMemory = (id: string) => {
+    if (!status.hasAccess || status.accessBlocked) {
+      Alert.alert(
+        'Premium Required',
+        'Managing memories requires an active subscription. Please upgrade to continue.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Upgrade', onPress: () => router.push('/(tabs)/subscription') }
+        ]
+      );
+      return;
+    }
+
     Alert.alert(
       'Delete Memory',
       'Are you sure you want to delete this memory?',
@@ -193,6 +248,37 @@ export default function MemoryScreen() {
   };
 
   const styles = createStyles(colors);
+
+  // Show access blocked screen if user doesn't have access
+  if (status.accessBlocked || !status.hasAccess) {
+    return (
+      <View style={styles.blockedContainer}>
+        <LinearGradient
+          colors={colors.gradient}
+          style={styles.blockedBackground}
+        >
+          <View style={styles.blockedContent}>
+            <View style={styles.blockedIconContainer}>
+              <Lock size={64} color={colors.background} strokeWidth={1.5} />
+            </View>
+            <Text style={styles.blockedTitle}>Memory Access Restricted</Text>
+            <Text style={styles.blockedSubtitle}>
+              {status.isExpired 
+                ? 'Your trial has expired. Subscribe to access your AI memory assistant and continue building your cognitive twin.'
+                : 'AI memory features require an active subscription to store and query your personal memories securely.'
+              }
+            </Text>
+            <TouchableOpacity
+              style={styles.blockedButton}
+              onPress={() => router.push('/(tabs)/subscription')}
+            >
+              <Text style={styles.blockedButtonText}>Upgrade to Premium</Text>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+      </View>
+    );
+  }
 
   if (loading) {
     return (
@@ -493,6 +579,52 @@ const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  blockedContainer: {
+    flex: 1,
+  },
+  blockedBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  blockedContent: {
+    alignItems: 'center',
+    padding: 32,
+  },
+  blockedIconContainer: {
+    width: 120,
+    height: 120,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 32,
+  },
+  blockedTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: colors.background,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  blockedSubtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
+  },
+  blockedButton: {
+    backgroundColor: colors.background,
+    borderRadius: 16,
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+  },
+  blockedButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.primary,
   },
   loadingContainer: {
     flex: 1,
