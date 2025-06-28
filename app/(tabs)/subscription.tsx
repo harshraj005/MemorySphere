@@ -11,18 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import {
-  Crown,
-  Check,
-  Sparkles,
-  Brain,
-  MessageCircle,
-  SquareCheck as CheckSquare,
-  Shield,
-  Star,
-  Clock,
-  AlertTriangle,
-} from 'lucide-react-native';
+import { Crown, Check, Sparkles, Brain, MessageCircle, SquareCheck as CheckSquare, Shield, Star, Clock, TriangleAlert as AlertTriangle } from 'lucide-react-native';
 
 const createStyles = (colors: any) => StyleSheet.create({
   container: {
