@@ -15,18 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useDataDeletionStatus } from '@/hooks/useDataDeletionStatus';
-import { 
-  Shield, 
-  ChevronLeft, 
-  Clock, 
-  AlertTriangle, 
-  CheckCircle, 
-  Calendar,
-  Crown,
-  Database,
-  Mail,
-  Trash2,
-} from 'lucide-react-native';
+import { Shield, ChevronLeft, Clock, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Calendar, Crown, Database, Mail, Trash2 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
