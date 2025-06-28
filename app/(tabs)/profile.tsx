@@ -10,6 +10,7 @@ import {
   TextInput,
   Modal,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -17,18 +18,19 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { getSupabase } from '@/lib/supabase';
-import { User, Settings, Download, Shield, CircleHelp as HelpCircle, LogOut, Moon, Sun, Crown, Mail, Calendar, Trash2, ChevronRight, X } from 'lucide-react-native';
+import { User, Settings, Download, Shield, CircleHelp as HelpCircle, LogOut, Moon, Sun, Crown, Mail, Calendar, Trash2, ChevronRight, X, FileText, Send } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
 export default function ProfileScreen() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, session } = useAuth();
   const { colors, theme, themePreference, setThemePreference } = useTheme();
   const { status } = useSubscription();
   const [loading, setLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const handleSignOut = () => {
     Alert.alert(
@@ -52,13 +54,55 @@ export default function ProfileScreen() {
     );
   };
 
-  const handleExportData = () => {
+  const handleExportData = async () => {
     Alert.alert(
-      'Export Data',
-      'Your data will be prepared and sent to your email address. This may take a few minutes.',
+      'Export Your Data',
+      'We\'ll generate a comprehensive PDF report with all your memories, tasks, and account information, then send it to your registered email address. This may take a few minutes.',
       [
-        { text: 'Cancel' },
-        { text: 'Export', onPress: () => console.log('Export data') },
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Export & Send', 
+          onPress: async () => {
+            setExportLoading(true);
+            
+            try {
+              if (!session?.access_token) {
+                Alert.alert('Error', 'Please log in again to export your data');
+                return;
+              }
+
+              const response = await fetch('/export-data', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${session.access_token}`,
+                },
+              });
+
+              const result = await response.json();
+
+              if (!response.ok) {
+                throw new Error(result.error || 'Failed to export data');
+              }
+
+              Alert.alert(
+                'Export Successful! 📧',
+                `Your complete data export has been generated and sent to ${user?.email}. Please check your email (including spam folder) for the PDF report.`,
+                [{ text: 'OK' }]
+              );
+
+            } catch (error: any) {
+              console.error('Export error:', error);
+              Alert.alert(
+                'Export Failed',
+                error.message || 'Failed to export your data. Please try again or contact support.',
+                [{ text: 'OK' }]
+              );
+            } finally {
+              setExportLoading(false);
+            }
+          }
+        },
       ]
     );
   };
@@ -284,20 +328,39 @@ export default function ProfileScreen() {
             </TouchableOpacity>
 
             {/* Export Data */}
-            <TouchableOpacity style={styles.settingItem} onPress={handleExportData}>
+            <TouchableOpacity 
+              style={styles.settingItem} 
+              onPress={handleExportData}
+              disabled={exportLoading}
+            >
               <View style={styles.settingLeft}>
                 <LinearGradient
                   colors={[colors.primary + '20', colors.primary + '10']}
                   style={styles.settingIcon}
                 >
-                  <Download size={20} color={colors.primary} strokeWidth={1.5} />
+                  {exportLoading ? (
+                    <ActivityIndicator size={20} color={colors.primary} />
+                  ) : (
+                    <FileText size={20} color={colors.primary} strokeWidth={1.5} />
+                  )}
                 </LinearGradient>
                 <View>
-                  <Text style={styles.settingTitle}>Export Data</Text>
-                  <Text style={styles.settingSubtitle}>Download all your memories and tasks</Text>
+                  <Text style={styles.settingTitle}>
+                    {exportLoading ? 'Generating Export...' : 'Export Data'}
+                  </Text>
+                  <Text style={styles.settingSubtitle}>
+                    {exportLoading 
+                      ? 'Creating PDF and sending to your email' 
+                      : 'Download PDF report via email'
+                    }
+                  </Text>
                 </View>
               </View>
-              <ChevronRight size={20} color={colors.textLight} strokeWidth={1.5} />
+              {!exportLoading && (
+                <View style={styles.exportIndicator}>
+                  <Send size={16} color={colors.primary} strokeWidth={1.5} />
+                </View>
+              )}
             </TouchableOpacity>
 
             {/* Help */}
@@ -615,6 +678,14 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     fontWeight: '500',
+  },
+  exportIndicator: {
+    width: 32,
+    height: 32,
+    backgroundColor: colors.primary + '15',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   appInfo: {
     borderRadius: 16,
