@@ -144,6 +144,7 @@ const createStyles = (colors: any, layout: any) => StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
+    minheight:80,
     minWidth: layout.isMobile ? '100%' : 'auto',
   },
 chatInput: {
