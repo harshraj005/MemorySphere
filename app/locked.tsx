@@ -9,7 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSubscription } from '@/hooks/useSubscription';
-import { Lock, Crown, Sparkles, Clock, AlertTriangle } from 'lucide-react-native';
+import { Lock, Crown, Sparkles, Clock, TriangleAlert as AlertTriangle } from 'lucide-react-native';
 
 export default function LockedScreen() {
   const { colors } = useTheme();
