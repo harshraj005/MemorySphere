@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Home, MessageCircle, SquareCheck as CheckSquare, User, Crown } from 'lucide-react-native';
+import { Home, MessageCircle, SquareCheck as CheckSquare, User, Crown, Shield } from 'lucide-react-native';
 import { Platform } from 'react-native';
 
 export default function TabsLayout() {
@@ -99,6 +99,18 @@ export default function TabsLayout() {
               strokeWidth={focused ? 2.5 : 2} 
             />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="privacy"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="data-retention"
+        options={{
+          href: null, // Hide from tab bar
         }}
       />
     </Tabs>
