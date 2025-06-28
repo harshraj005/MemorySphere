@@ -144,20 +144,15 @@ const createStyles = (colors: any, layout: any) => StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
-    minheight:80,
     minWidth: layout.isMobile ? '100%' : 'auto',
   },
 chatInput: {
   flex: 1,
-  height: 64, // ⬆️ Increased height from 48 to 64
-  color: colors.background,
-  fontSize: layout.fontSize.medium,
-  paddingVertical: 12, // ⬆️ Ensures content is vertically centered
-  paddingHorizontal: 16, // Optional: improve touch target
-  borderRadius: 16, // Optional: rounded edges for better UX
-  backgroundColor: 'rgba(255,255,255,0.1)', // Optional for visual appeal
-  fontWeight: '500',
-  marginLeft: 12,
+    height: 48,
+    color: colors.background,
+    fontSize: layout.fontSize.medium,
+    marginLeft: 12,
+    fontWeight: '500',
 },
 
   sendButton: {
