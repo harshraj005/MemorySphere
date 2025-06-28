@@ -354,17 +354,16 @@ const createStyles = (colors: any, layout: any) => StyleSheet.create({
     fontWeight: '500',
   },
   chatInput: {
-    flexDirection: 'row',
+  flexDirection: 'row',
   alignItems: 'center',
   justifyContent: 'space-between',
   paddingHorizontal: layout.padding || 16,
-  paddingVertical: 20, // reduced slightly from 20 for tighter layout
-  backgroundColor: '#fff', // optional: define if your chat background varies
   borderTopWidth: 1,
   borderTopColor: colors.border || '#E0E0E0',
   gap: 12,
-  minHeight: 64, // ensures enough vertical space for inputs/icons
-  elevation: 4, // subtle shadow on Android
+  height: 72, // ✅ This forces vertical height directly
+  backgroundColor: '#fff',
+  elevation: 4,
   shadowColor: colors.shadowMedium || '#000',
   shadowOffset: { width: 0, height: -2 },
   shadowOpacity: 0.08,
