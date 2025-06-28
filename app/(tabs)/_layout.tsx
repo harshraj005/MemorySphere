@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Home as Home, MessageCircle, SquareCheck as CheckSquare, User, Crown, Shield } from 'lucide-react-native';
+import { Home as Home, MessageCircle, SquareCheck as CheckSquare, User, Crown, Shield, CircleHelp as HelpCircle } from 'lucide-react-native';
 import { Platform } from 'react-native';
 
 export default function TabsLayout() {
@@ -89,16 +89,22 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="help"
         options={{
-          title: 'Profile',
+          title: 'Help',
           tabBarIcon: ({ size, color, focused }) => (
-            <User 
+            <HelpCircle 
               size={focused ? size + 2 : size} 
               color={color} 
               strokeWidth={focused ? 2.5 : 2} 
             />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          href: null, // Hide from tab bar but keep accessible via navigation
         }}
       />
       <Tabs.Screen

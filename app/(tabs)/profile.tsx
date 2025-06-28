@@ -590,8 +590,11 @@ export default function ProfileScreen() {
               <ChevronRight size={20} color={colors.textLight} strokeWidth={1.5} />
             </TouchableOpacity>
 
-            {/* Help */}
-            <TouchableOpacity style={styles.settingItem}>
+            {/* Help & Support */}
+            <TouchableOpacity 
+              style={styles.settingItem}
+              onPress={() => router.push('/(tabs)/help')}
+            >
               <View style={styles.settingLeft}>
                 <LinearGradient
                   colors={[colors.primary + '20', colors.primary + '10']}
