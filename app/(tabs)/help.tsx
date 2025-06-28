@@ -17,29 +17,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { ResponsiveContainer } from '@/components/ResponsiveContainer';
 import { ResponsiveGrid } from '@/components/ResponsiveGrid';
-import {
-  CircleHelp as HelpCircle,
-  ChevronLeft,
-  MessageCircle,
-  Book,
-  Mail,
-  Phone,
-  Search,
-  ChevronRight,
-  Bot,
-  Send,
-  X,
-  User,
-  Sparkles,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Settings,
-  Shield,
-  CreditCard,
-  Database,
-  Smartphone,
-} from 'lucide-react-native';
+import { CircleHelp as HelpCircle, ChevronLeft, MessageCircle, Book, Mail, Phone, Search, ChevronRight, Bot, Send, X, User, Sparkles, Clock, CircleCheck as CheckCircle, CircleAlert as AlertCircle, Settings, Shield, CreditCard, Database, Smartphone } from 'lucide-react-native';
 
 interface ChatMessage {
   id: string;
