@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Alert,
   Modal,
+  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,7 +25,10 @@ import {
   User,
   Sparkles,
   Send,
+  X,
 } from 'lucide-react-native';
+
+const { width } = Dimensions.get('window');
 
 export default function MemoryScreen() {
   const { user } = useAuth();
@@ -193,7 +197,12 @@ export default function MemoryScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <Brain size={48} color={colors.primary} />
+        <LinearGradient
+          colors={colors.gradient}
+          style={styles.loadingGradient}
+        >
+          <Brain size={48} color={colors.background} strokeWidth={1.5} />
+        </LinearGradient>
         <Text style={styles.loadingText}>Loading your memories...</Text>
       </View>
     );
@@ -205,31 +214,73 @@ export default function MemoryScreen() {
       <LinearGradient
         colors={colors.gradient}
         style={styles.header}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
       >
-        <Text style={styles.headerTitle}>AI Memory Assistant</Text>
-        <Text style={styles.headerSubtitle}>Ask me anything about your memories</Text>
-              
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>AI Memory Assistant</Text>
+          <Text style={styles.headerSubtitle}>Ask me anything about your memories</Text>
+        </View>
+
+        {/* AI Chat Input */}
+        <View style={styles.chatContainer}>
+          <LinearGradient
+            colors={['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0.1)']}
+            style={styles.chatInputContainer}
+          >
+            <Sparkles size={20} color="rgba(255, 255, 255, 0.8)" strokeWidth={1.5} />
+            <TextInput
+              style={styles.chatInput}
+              placeholder="Ask about your memories..."
+              placeholderTextColor="rgba(255, 255, 255, 0.7)"
+              value={chatInput}
+              onChangeText={setChatInput}
+              onSubmitEditing={handleAIQuery}
+            />
+          </LinearGradient>
+          <TouchableOpacity
+            style={styles.sendButton}
+            onPress={handleAIQuery}
+            disabled={!chatInput.trim()}
+          >
+            <LinearGradient
+              colors={chatInput.trim() ? ['rgba(255, 255, 255, 0.3)', 'rgba(255, 255, 255, 0.2)'] : ['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)']}
+              style={styles.sendButtonGradient}
+            >
+              <Send size={20} color={colors.background} strokeWidth={1.5} />
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
 
       {/* Content */}
       <View style={styles.content}>
         {/* Search and Add */}
         <View style={styles.controls}>
-          <View style={styles.searchContainer}>
-            <Search size={20} color={colors.textLight} />
+          <LinearGradient
+            colors={colors.cardGradient}
+            style={styles.searchContainer}
+          >
+            <Search size={20} color={colors.textLight} strokeWidth={1.5} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Tell mzzzz"
+              placeholder="Search memories..."
               placeholderTextColor={colors.textLight}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
-          </View>
+          </LinearGradient>
           <TouchableOpacity
             style={styles.addButton}
             onPress={() => setShowAddModal(true)}
+            activeOpacity={0.8}
           >
-            <Plus size={24} color={colors.background} />
+            <LinearGradient
+              colors={[colors.primary, colors.primaryLight]}
+              style={styles.addButtonGradient}
+            >
+              <Plus size={24} color={colors.background} strokeWidth={2} />
+            </LinearGradient>
           </TouchableOpacity>
         </View>
 
@@ -237,11 +288,18 @@ export default function MemoryScreen() {
         <ScrollView style={styles.memoriesList} showsVerticalScrollIndicator={false}>
           {filteredMemories.length > 0 ? (
             filteredMemories.map((memory) => (
-              <View key={memory.id} style={styles.memoryCard}>
+              <LinearGradient
+                key={memory.id}
+                colors={colors.cardGradient}
+                style={styles.memoryCard}
+              >
                 <View style={styles.memoryHeader}>
-                  <View style={styles.memoryIcon}>
-                    <Brain size={20} color={colors.primary} />
-                  </View>
+                  <LinearGradient
+                    colors={[colors.primary + '20', colors.primary + '10']}
+                    style={styles.memoryIcon}
+                  >
+                    <Brain size={20} color={colors.primary} strokeWidth={1.5} />
+                  </LinearGradient>
                   <View style={styles.memoryInfo}>
                     <Text style={styles.memoryTitle}>{memory.title}</Text>
                     <Text style={styles.memoryDate}>
@@ -261,13 +319,13 @@ export default function MemoryScreen() {
                 <View style={styles.memoryMeta}>
                   {memory.person && (
                     <View style={styles.metaItem}>
-                      <User size={14} color={colors.textSecondary} />
+                      <User size={14} color={colors.textSecondary} strokeWidth={1.5} />
                       <Text style={styles.metaText}>{memory.person}</Text>
                     </View>
                   )}
                   {memory.location && (
                     <View style={styles.metaItem}>
-                      <MapPin size={14} color={colors.textSecondary} />
+                      <MapPin size={14} color={colors.textSecondary} strokeWidth={1.5} />
                       <Text style={styles.metaText}>{memory.location}</Text>
                     </View>
                   )}
@@ -277,9 +335,13 @@ export default function MemoryScreen() {
                 {memory.tags.length > 0 && (
                   <View style={styles.tags}>
                     {memory.tags.map((tag, index) => (
-                      <View key={index} style={styles.tag}>
+                      <LinearGradient
+                        key={index}
+                        colors={[colors.primary + '15', colors.primary + '08']}
+                        style={styles.tag}
+                      >
                         <Text style={styles.tagText}>#{tag}</Text>
-                      </View>
+                      </LinearGradient>
                     ))}
                   </View>
                 )}
@@ -287,22 +349,32 @@ export default function MemoryScreen() {
                 {/* Delete Button */}
                 <TouchableOpacity
                   onPress={() => handleDeleteMemory(memory.id)}
-                  style={{ alignSelf: 'flex-end', marginTop: 8 }}
+                  style={styles.deleteButton}
                 >
-                  <Text style={{ color: colors.danger || '#e53935', fontSize: 12 }}>
-                    Delete
-                  </Text>
+                  <Text style={styles.deleteButtonText}>Delete</Text>
                 </TouchableOpacity>
-              </View>
+              </LinearGradient>
             ))
           ) : (
-            <View style={styles.emptyContainer}>
-              <Brain size={64} color={colors.textLight} />
+            <LinearGradient
+              colors={colors.cardGradient}
+              style={styles.emptyContainer}
+            >
+              <View style={styles.emptyIconContainer}>
+                <Brain size={64} color={colors.textLight} strokeWidth={1.5} />
+              </View>
               <Text style={styles.emptyTitle}>No memories found</Text>
               <Text style={styles.emptySubtitle}>
                 {searchQuery ? 'Try a different search term' : 'Start by adding your first memory'}
               </Text>
-            </View>
+              <TouchableOpacity 
+                style={styles.emptyAction}
+                onPress={() => setShowAddModal(true)}
+              >
+                <Plus size={16} color={colors.primary} strokeWidth={2} />
+                <Text style={styles.emptyActionText}>Add Memory</Text>
+              </TouchableOpacity>
+            </LinearGradient>
           )}
         </ScrollView>
       </View>
@@ -313,19 +385,36 @@ export default function MemoryScreen() {
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <View style={styles.modal}>
+        <LinearGradient
+          colors={colors.gradientSubtle}
+          style={styles.modal}
+        >
           <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowAddModal(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
+            <TouchableOpacity 
+              onPress={() => setShowAddModal(false)}
+              style={styles.modalCloseButton}
+            >
+              <X size={24} color={colors.textSecondary} strokeWidth={2} />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Add Memory</Text>
-            <TouchableOpacity onPress={addMemory}>
-              <Text style={styles.saveText}>Save</Text>
+            <TouchableOpacity 
+              onPress={addMemory}
+              style={styles.modalSaveButton}
+            >
+              <LinearGradient
+                colors={[colors.primary, colors.primaryLight]}
+                style={styles.modalSaveGradient}
+              >
+                <Text style={styles.saveText}>Save</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.modalContent}>
-            <View style={styles.inputGroup}>
+          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+            <LinearGradient
+              colors={colors.cardGradient}
+              style={styles.inputGroup}
+            >
               <Text style={styles.inputLabel}>Title *</Text>
               <TextInput
                 style={styles.textInput}
@@ -334,9 +423,12 @@ export default function MemoryScreen() {
                 value={newMemory.title}
                 onChangeText={(text) => setNewMemory({ ...newMemory, title: text })}
               />
-            </View>
+            </LinearGradient>
 
-            <View style={styles.inputGroup}>
+            <LinearGradient
+              colors={colors.cardGradient}
+              style={styles.inputGroup}
+            >
               <Text style={styles.inputLabel}>Content *</Text>
               <TextInput
                 style={[styles.textInput, styles.textArea]}
@@ -347,9 +439,12 @@ export default function MemoryScreen() {
                 multiline
                 numberOfLines={4}
               />
-            </View>
+            </LinearGradient>
 
-            <View style={styles.inputGroup}>
+            <LinearGradient
+              colors={colors.cardGradient}
+              style={styles.inputGroup}
+            >
               <Text style={styles.inputLabel}>Person</Text>
               <TextInput
                 style={styles.textInput}
@@ -358,9 +453,12 @@ export default function MemoryScreen() {
                 value={newMemory.person}
                 onChangeText={(text) => setNewMemory({ ...newMemory, person: text })}
               />
-            </View>
+            </LinearGradient>
 
-            <View style={styles.inputGroup}>
+            <LinearGradient
+              colors={colors.cardGradient}
+              style={styles.inputGroup}
+            >
               <Text style={styles.inputLabel}>Location</Text>
               <TextInput
                 style={styles.textInput}
@@ -369,9 +467,12 @@ export default function MemoryScreen() {
                 value={newMemory.location}
                 onChangeText={(text) => setNewMemory({ ...newMemory, location: text })}
               />
-            </View>
+            </LinearGradient>
 
-            <View style={styles.inputGroup}>
+            <LinearGradient
+              colors={colors.cardGradient}
+              style={styles.inputGroup}
+            >
               <Text style={styles.inputLabel}>Emotion</Text>
               <TextInput
                 style={styles.textInput}
@@ -380,9 +481,9 @@ export default function MemoryScreen() {
                 value={newMemory.emotion}
                 onChangeText={(text) => setNewMemory({ ...newMemory, emotion: text })}
               />
-            </View>
+            </LinearGradient>
           </ScrollView>
-        </View>
+        </LinearGradient>
       </Modal>
     </View>
   );
@@ -399,53 +500,82 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.background,
   },
+  loadingGradient: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
   loadingText: {
     fontSize: 16,
     color: colors.textSecondary,
-    marginTop: 16,
+    fontWeight: '500',
   },
   header: {
     paddingTop: 60,
-    paddingBottom: 24,
+    paddingBottom: 32,
     paddingHorizontal: 24,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+  },
+  headerContent: {
+    marginBottom: 24,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 32,
+    fontWeight: '700',
     color: colors.background,
-    marginBottom: 4,
+    marginBottom: 8,
+    letterSpacing: -0.5,
   },
   headerSubtitle: {
     fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginBottom: 20,
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontWeight: '400',
+    lineHeight: 22,
   },
   chatContainer: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 16,
-    padding: 4,
-    alignItems: 'flex-end',
+    alignItems: 'center',
+    gap: 12,
+  },
+  chatInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 4,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   chatInput: {
     flex: 1,
+    height: 48,
     color: colors.background,
     fontSize: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    maxHeight: 100,
+    marginLeft: 12,
+    fontWeight: '500',
   },
   sendButton: {
-    width: 40,
-    height: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 12,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  sendButtonGradient: {
+    width: 48,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
   content: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: 24,
+    paddingTop: 24,
   },
   controls: {
     flexDirection: 'row',
@@ -457,9 +587,13 @@ const createStyles = (colors: any) => StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: 12,
+    borderRadius: 16,
     paddingHorizontal: 16,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -469,12 +603,20 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 16,
     color: colors.text,
     marginLeft: 12,
+    fontWeight: '500',
   },
   addButton: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  addButtonGradient: {
     width: 48,
     height: 48,
-    backgroundColor: colors.primary,
-    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -482,39 +624,43 @@ const createStyles = (colors: any) => StyleSheet.create({
     flex: 1,
   },
   memoryCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 20,
+    padding: 24,
     marginBottom: 16,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
     borderWidth: 1,
     borderColor: colors.border,
   },
   memoryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   memoryIcon: {
-    width: 36,
-    height: 36,
-    backgroundColor: colors.primaryLight + '20',
-    borderRadius: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 16,
   },
   memoryInfo: {
     flex: 1,
   },
   memoryTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: colors.text,
+    marginBottom: 4,
   },
   memoryDate: {
     fontSize: 12,
     color: colors.textSecondary,
-    marginTop: 2,
+    fontWeight: '500',
   },
   emotionIcon: {
     fontSize: 20,
@@ -522,13 +668,13 @@ const createStyles = (colors: any) => StyleSheet.create({
   memoryContent: {
     fontSize: 14,
     color: colors.textSecondary,
-    lineHeight: 20,
-    marginBottom: 12,
+    lineHeight: 22,
+    marginBottom: 16,
   },
   memoryMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
     gap: 16,
   },
   metaItem: {
@@ -538,45 +684,85 @@ const createStyles = (colors: any) => StyleSheet.create({
   metaText: {
     fontSize: 12,
     color: colors.textSecondary,
-    marginLeft: 4,
+    marginLeft: 6,
+    fontWeight: '500',
   },
   tags: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    marginBottom: 16,
   },
   tag: {
-    backgroundColor: colors.primary + '15',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   tagText: {
     fontSize: 12,
     color: colors.primary,
-    fontWeight: '500',
+    fontWeight: '600',
+  },
+  deleteButton: {
+    alignSelf: 'flex-end',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  deleteButtonText: {
+    color: colors.error,
+    fontSize: 12,
+    fontWeight: '600',
   },
   emptyContainer: {
-    flex: 1,
+    borderRadius: 20,
+    padding: 40,
+    alignItems: 'center',
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  emptyIconContainer: {
+    width: 80,
+    height: 80,
+    backgroundColor: colors.surface,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 64,
+    marginBottom: 20,
   },
   emptyTitle: {
     fontSize: 20,
     fontWeight: '600',
     color: colors.textSecondary,
-    marginTop: 16,
+    marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 14,
     color: colors.textLight,
     textAlign: 'center',
-    marginTop: 8,
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  emptyAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary + '15',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  emptyActionText: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: '600',
+    marginLeft: 6,
   },
   modal: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -584,50 +770,63 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     paddingTop: 60,
     paddingHorizontal: 24,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingBottom: 20,
+  },
+  modalCloseButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
     color: colors.text,
   },
-  cancelText: {
-    fontSize: 16,
-    color: colors.textSecondary,
+  modalSaveButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  modalSaveGradient: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
   },
   saveText: {
     fontSize: 16,
-    color: colors.primary,
+    color: colors.background,
     fontWeight: '600',
   },
   modalContent: {
     flex: 1,
-    padding: 24,
+    paddingHorizontal: 24,
   },
   inputGroup: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.text,
-    marginBottom: 8,
-  },
-  textInput: {
-    height: 48,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    color: colors.text,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
     borderWidth: 1,
     borderColor: colors.border,
   },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 12,
+  },
+  textInput: {
+    fontSize: 16,
+    color: colors.text,
+    fontWeight: '500',
+  },
   textArea: {
     height: 100,
-    paddingTop: 16,
     textAlignVertical: 'top',
   },
 });

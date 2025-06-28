@@ -9,6 +9,7 @@ import {
   Switch,
   TextInput,
   Modal,
+  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -17,6 +18,8 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { getSupabase } from '@/lib/supabase';
 import { User, Settings, Download, Shield, CircleHelp as HelpCircle, LogOut, Moon, Sun, Crown, Mail, Calendar, Trash2, ChevronRight, X } from 'lucide-react-native';
+
+const { width } = Dimensions.get('window');
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
@@ -141,26 +144,34 @@ export default function ProfileScreen() {
 
   return (
     <>
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <LinearGradient
           colors={colors.gradient}
           style={styles.header}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
         >
           <View style={styles.profileInfo}>
-            <View style={styles.avatar}>
-              <User size={32} color={colors.background} strokeWidth={2} />
-            </View>
+            <LinearGradient
+              colors={['rgba(255, 255, 255, 0.25)', 'rgba(255, 255, 255, 0.15)']}
+              style={styles.avatar}
+            >
+              <User size={32} color={colors.background} strokeWidth={1.5} />
+            </LinearGradient>
             <View style={styles.userInfo}>
               <Text style={styles.userName}>
                 {user?.first_name} {user?.last_name}
               </Text>
               <Text style={styles.userEmail}>{user?.email}</Text>
               {status.isActive && (
-                <View style={styles.premiumBadge}>
-                  <Crown size={12} color={colors.accent} />
+                <LinearGradient
+                  colors={['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0.1)']}
+                  style={styles.premiumBadge}
+                >
+                  <Crown size={12} color={colors.background} strokeWidth={1.5} />
                   <Text style={styles.premiumText}>Premium</Text>
-                </View>
+                </LinearGradient>
               )}
             </View>
           </View>
@@ -170,39 +181,63 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account Stats</Text>
           <View style={styles.statsContainer}>
-            <View style={styles.statCard}>
+            <LinearGradient
+              colors={colors.cardGradient}
+              style={styles.statCard}
+            >
+              <View style={styles.statIconContainer}>
+                <User size={20} color={colors.primary} strokeWidth={1.5} />
+              </View>
               <Text style={styles.statNumber}>0</Text>
               <Text style={styles.statLabel}>Memories</Text>
-            </View>
-            <View style={styles.statCard}>
+            </LinearGradient>
+            <LinearGradient
+              colors={colors.cardGradient}
+              style={styles.statCard}
+            >
+              <View style={styles.statIconContainer}>
+                <Settings size={20} color={colors.secondary} strokeWidth={1.5} />
+              </View>
               <Text style={styles.statNumber}>0</Text>
               <Text style={styles.statLabel}>Tasks</Text>
-            </View>
-            <View style={styles.statCard}>
+            </LinearGradient>
+            <LinearGradient
+              colors={colors.cardGradient}
+              style={styles.statCard}
+            >
+              <View style={styles.statIconContainer}>
+                <Calendar size={20} color={colors.success} strokeWidth={1.5} />
+              </View>
               <Text style={styles.statNumber}>
                 {user?.created_at ? Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0}
               </Text>
               <Text style={styles.statLabel}>Days Active</Text>
-            </View>
+            </LinearGradient>
           </View>
         </View>
 
         {/* Settings */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Settings</Text>
-          <View style={styles.settingsList}>
+          <LinearGradient
+            colors={colors.cardGradient}
+            style={styles.settingsList}
+          >
             {/* Theme */}
             <TouchableOpacity style={styles.settingItem} onPress={handleThemeChange}>
               <View style={styles.settingLeft}>
-                <View style={styles.settingIcon}>
-                  {React.createElement(getThemeIcon(), { size: 20, color: colors.primary })}
-                </View>
+                <LinearGradient
+                  colors={[colors.primary + '20', colors.primary + '10']}
+                  style={styles.settingIcon}
+                >
+                  {React.createElement(getThemeIcon(), { size: 20, color: colors.primary, strokeWidth: 1.5 })}
+                </LinearGradient>
                 <View>
                   <Text style={styles.settingTitle}>Theme</Text>
                   <Text style={styles.settingSubtitle}>{getThemeText()}</Text>
                 </View>
               </View>
-              <ChevronRight size={20} color={colors.textLight} />
+              <ChevronRight size={20} color={colors.textLight} strokeWidth={1.5} />
             </TouchableOpacity>
 
             {/* Subscription */}
@@ -211,9 +246,12 @@ export default function ProfileScreen() {
               onPress={() => router.push('/(tabs)/subscription')}
             >
               <View style={styles.settingLeft}>
-                <View style={styles.settingIcon}>
-                  <Crown size={20} color={colors.primary} />
-                </View>
+                <LinearGradient
+                  colors={[colors.primary + '20', colors.primary + '10']}
+                  style={styles.settingIcon}
+                >
+                  <Crown size={20} color={colors.primary} strokeWidth={1.5} />
+                </LinearGradient>
                 <View>
                   <Text style={styles.settingTitle}>Subscription</Text>
                   <Text style={styles.settingSubtitle}>
@@ -222,7 +260,7 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
               </View>
-              <ChevronRight size={20} color={colors.textLight} />
+              <ChevronRight size={20} color={colors.textLight} strokeWidth={1.5} />
             </TouchableOpacity>
 
             {/* Privacy & Security */}
@@ -231,85 +269,108 @@ export default function ProfileScreen() {
               onPress={() => router.push('/(tabs)/privacy')}
             >
               <View style={styles.settingLeft}>
-                <View style={styles.settingIcon}>
-                  <Shield size={20} color={colors.primary} />
-                </View>
+                <LinearGradient
+                  colors={[colors.primary + '20', colors.primary + '10']}
+                  style={styles.settingIcon}
+                >
+                  <Shield size={20} color={colors.primary} strokeWidth={1.5} />
+                </LinearGradient>
                 <View>
                   <Text style={styles.settingTitle}>Privacy & Security</Text>
                   <Text style={styles.settingSubtitle}>Manage your data privacy</Text>
                 </View>
               </View>
-              <ChevronRight size={20} color={colors.textLight} />
+              <ChevronRight size={20} color={colors.textLight} strokeWidth={1.5} />
             </TouchableOpacity>
 
             {/* Export Data */}
             <TouchableOpacity style={styles.settingItem} onPress={handleExportData}>
               <View style={styles.settingLeft}>
-                <View style={styles.settingIcon}>
-                  <Download size={20} color={colors.primary} />
-                </View>
+                <LinearGradient
+                  colors={[colors.primary + '20', colors.primary + '10']}
+                  style={styles.settingIcon}
+                >
+                  <Download size={20} color={colors.primary} strokeWidth={1.5} />
+                </LinearGradient>
                 <View>
                   <Text style={styles.settingTitle}>Export Data</Text>
                   <Text style={styles.settingSubtitle}>Download all your memories and tasks</Text>
                 </View>
               </View>
-              <ChevronRight size={20} color={colors.textLight} />
+              <ChevronRight size={20} color={colors.textLight} strokeWidth={1.5} />
             </TouchableOpacity>
 
             {/* Help */}
             <TouchableOpacity style={styles.settingItem}>
               <View style={styles.settingLeft}>
-                <View style={styles.settingIcon}>
-                  <HelpCircle size={20} color={colors.primary} />
-                </View>
+                <LinearGradient
+                  colors={[colors.primary + '20', colors.primary + '10']}
+                  style={styles.settingIcon}
+                >
+                  <HelpCircle size={20} color={colors.primary} strokeWidth={1.5} />
+                </LinearGradient>
                 <View>
                   <Text style={styles.settingTitle}>Help & Support</Text>
                   <Text style={styles.settingSubtitle}>Get help and contact support</Text>
                 </View>
               </View>
-              <ChevronRight size={20} color={colors.textLight} />
+              <ChevronRight size={20} color={colors.textLight} strokeWidth={1.5} />
             </TouchableOpacity>
-          </View>
+          </LinearGradient>
         </View>
 
         {/* Account Actions */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
-          <View style={styles.settingsList}>
+          <LinearGradient
+            colors={colors.cardGradient}
+            style={styles.settingsList}
+          >
             <TouchableOpacity style={styles.settingItem} onPress={handleSignOut}>
               <View style={styles.settingLeft}>
-                <View style={styles.settingIcon}>
-                  <LogOut size={20} color={colors.error} />
-                </View>
+                <LinearGradient
+                  colors={[colors.error + '20', colors.error + '10']}
+                  style={styles.settingIcon}
+                >
+                  <LogOut size={20} color={colors.error} strokeWidth={1.5} />
+                </LinearGradient>
                 <Text style={[styles.settingTitle, { color: colors.error }]}>Sign Out</Text>
               </View>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.settingItem} onPress={handleDeleteAccount}>
               <View style={styles.settingLeft}>
-                <View style={styles.settingIcon}>
-                  <Trash2 size={20} color={colors.error} />
-                </View>
+                <LinearGradient
+                  colors={[colors.error + '20', colors.error + '10']}
+                  style={styles.settingIcon}
+                >
+                  <Trash2 size={20} color={colors.error} strokeWidth={1.5} />
+                </LinearGradient>
                 <Text style={[styles.settingTitle, { color: colors.error }]}>Delete Account</Text>
               </View>
             </TouchableOpacity>
-          </View>
+          </LinearGradient>
         </View>
 
         {/* App Info */}
-       <View style={styles.section}>
-  <View style={styles.appInfo}>
-    <Text style={styles.appName}>MemorySphere</Text>
-    <Text style={styles.appVersion}>Version 1.0.0</Text>
-    <Text style={styles.appDescription}>
-      Your AI-powered cognitive twin for memories and productivity
-    </Text>
-    <Text style={styles.appDescription}>
-      Made with love with bolt.new AI
-    </Text>
-  </View>
-</View>
+        <View style={styles.section}>
+          <LinearGradient
+            colors={colors.cardGradient}
+            style={styles.appInfo}
+          >
+            <Text style={styles.appName}>MemorySphere</Text>
+            <Text style={styles.appVersion}>Version 1.0.0</Text>
+            <Text style={styles.appDescription}>
+              Your AI-powered cognitive twin for memories and productivity
+            </Text>
+            <Text style={styles.appDescription}>
+              Made with love with bolt.new AI
+            </Text>
+          </LinearGradient>
+        </View>
 
+        {/* Bottom Spacing */}
+        <View style={styles.bottomSpacing} />
       </ScrollView>
 
       {/* Delete Account Modal */}
@@ -319,18 +380,29 @@ export default function ProfileScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowDeleteModal(false)}
       >
-        <View style={styles.modal}>
+        <LinearGradient
+          colors={colors.gradientSubtle}
+          style={styles.modal}
+        >
           <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowDeleteModal(false)}>
-              <X size={24} color={colors.textSecondary} />
+            <TouchableOpacity 
+              onPress={() => setShowDeleteModal(false)}
+              style={styles.modalCloseButton}
+            >
+              <X size={24} color={colors.textSecondary} strokeWidth={2} />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Delete Account</Text>
             <View style={{ width: 24 }} />
           </View>
 
           <View style={styles.modalContent}>
-            <View style={styles.warningContainer}>
-              <Trash2 size={48} color={colors.error} />
+            <LinearGradient
+              colors={colors.cardGradient}
+              style={styles.warningContainer}
+            >
+              <View style={styles.warningIconContainer}>
+                <Trash2 size={48} color={colors.error} strokeWidth={1.5} />
+              </View>
               <Text style={styles.warningTitle}>Permanently Delete Account</Text>
               <Text style={styles.warningText}>
                 This action cannot be undone. All your memories, tasks, and data will be permanently deleted from our servers.
@@ -338,9 +410,12 @@ export default function ProfileScreen() {
               <Text style={styles.warningNote}>
                 Note: Your account will be completely removed and you'll need to create a new account to use the app again.
               </Text>
-            </View>
+            </LinearGradient>
 
-            <View style={styles.confirmationContainer}>
+            <LinearGradient
+              colors={colors.cardGradient}
+              style={styles.confirmationContainer}
+            >
               <Text style={styles.confirmationLabel}>
                 Type "DELETE" to confirm account deletion:
               </Text>
@@ -353,7 +428,7 @@ export default function ProfileScreen() {
                 autoCapitalize="characters"
                 autoCorrect={false}
               />
-            </View>
+            </LinearGradient>
 
             <View style={styles.modalActions}>
               <TouchableOpacity
@@ -374,13 +449,18 @@ export default function ProfileScreen() {
                 onPress={confirmDeleteAccount}
                 disabled={deleteConfirmation.toUpperCase() !== 'DELETE' || deleting}
               >
-                <Text style={styles.deleteButtonText}>
-                  {deleting ? 'Deleting...' : 'Delete Account'}
-                </Text>
+                <LinearGradient
+                  colors={deleteConfirmation.toUpperCase() === 'DELETE' && !deleting ? [colors.error, colors.error + 'CC'] : ['#999', '#777']}
+                  style={styles.deleteButtonGradient}
+                >
+                  <Text style={styles.deleteButtonText}>
+                    {deleting ? 'Deleting...' : 'Delete Account'}
+                  </Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </LinearGradient>
       </Modal>
     </>
   );
@@ -395,6 +475,8 @@ const createStyles = (colors: any) => StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 32,
     paddingHorizontal: 24,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
   },
   profileInfo: {
     flexDirection: 'row',
@@ -403,30 +485,35 @@ const createStyles = (colors: any) => StyleSheet.create({
   avatar: {
     width: 64,
     height: 64,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   userInfo: {
     flex: 1,
   },
   userName: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: colors.background,
     marginBottom: 4,
+    letterSpacing: -0.3,
   },
   userEmail: {
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.8)',
     marginBottom: 8,
+    fontWeight: '400',
   },
   premiumBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -443,9 +530,10 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: colors.text,
     marginBottom: 16,
+    letterSpacing: -0.3,
   },
   statsContainer: {
     flexDirection: 'row',
@@ -453,35 +541,54 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
     borderWidth: 1,
     borderColor: colors.border,
   },
+  statIconContainer: {
+    width: 40,
+    height: 40,
+    backgroundColor: colors.surface,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
   statNumber: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: colors.text,
+    marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
     color: colors.textSecondary,
-    marginTop: 4,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   settingsList: {
-    backgroundColor: colors.surface,
     borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
     borderWidth: 1,
     borderColor: colors.border,
-    overflow: 'hidden',
   },
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
@@ -491,48 +598,60 @@ const createStyles = (colors: any) => StyleSheet.create({
     flex: 1,
   },
   settingIcon: {
-    width: 36,
-    height: 36,
-    backgroundColor: colors.primary + '15',
-    borderRadius: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
   },
   settingTitle: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
     color: colors.text,
+    marginBottom: 2,
   },
   settingSubtitle: {
     fontSize: 14,
     color: colors.textSecondary,
-    marginTop: 2,
+    fontWeight: '500',
   },
   appInfo: {
+    borderRadius: 16,
+    padding: 24,
     alignItems: 'center',
-    paddingVertical: 20,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   appName: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: colors.text,
     marginBottom: 4,
   },
   appVersion: {
     fontSize: 14,
     color: colors.textSecondary,
-    marginBottom: 8,
+    marginBottom: 12,
+    fontWeight: '500',
   },
   appDescription: {
     fontSize: 14,
     color: colors.textLight,
     textAlign: 'center',
     lineHeight: 20,
+    marginBottom: 4,
+  },
+  bottomSpacing: {
+    height: 32,
   },
   modal: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -540,13 +659,19 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     paddingTop: 60,
     paddingHorizontal: 24,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    paddingBottom: 20,
+  },
+  modalCloseButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
     color: colors.text,
   },
   modalContent: {
@@ -554,14 +679,31 @@ const createStyles = (colors: any) => StyleSheet.create({
     padding: 24,
   },
   warningContainer: {
+    borderRadius: 16,
+    padding: 24,
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 24,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  warningIconContainer: {
+    width: 80,
+    height: 80,
+    backgroundColor: colors.error + '15',
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
   },
   warningTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: colors.error,
-    marginTop: 16,
     marginBottom: 12,
     textAlign: 'center',
   },
@@ -580,11 +722,20 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontStyle: 'italic',
   },
   confirmationContainer: {
-    marginBottom: 32,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   confirmationLabel: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
     color: colors.text,
     marginBottom: 12,
   },
@@ -597,6 +748,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.text,
     borderWidth: 2,
     borderColor: colors.error,
+    fontWeight: '600',
   },
   modalActions: {
     flexDirection: 'row',
@@ -614,19 +766,22 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
     color: colors.textSecondary,
   },
   deleteButton: {
     flex: 1,
     height: 48,
-    backgroundColor: colors.error,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    overflow: 'hidden',
   },
   deleteButtonDisabled: {
     opacity: 0.5,
+  },
+  deleteButtonGradient: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   deleteButtonText: {
     fontSize: 16,

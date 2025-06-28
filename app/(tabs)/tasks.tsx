@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Alert,
   Modal,
+  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,8 +23,12 @@ import {
   Target,
   Trash2,
   Sparkles,
+  X,
+  Check,
 } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+
+const { width } = Dimensions.get('window');
 
 export default function TasksScreen() {
   const { user } = useAuth();
@@ -219,11 +224,11 @@ export default function TasksScreen() {
   const getPriorityIcon = (priority: string) => {
     switch (priority) {
       case 'high':
-        return <AlertCircle size={16} color={colors.error} />;
+        return <AlertCircle size={16} color={colors.error} strokeWidth={1.5} />;
       case 'medium':
-        return <Clock size={16} color={colors.warning} />;
+        return <Clock size={16} color={colors.warning} strokeWidth={1.5} />;
       case 'low':
-        return <Target size={16} color={colors.success} />;
+        return <Target size={16} color={colors.success} strokeWidth={1.5} />;
       default:
         return null;
     }
@@ -241,7 +246,12 @@ export default function TasksScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <CheckSquare size={48} color={colors.primary} />
+        <LinearGradient
+          colors={colors.gradient}
+          style={styles.loadingGradient}
+        >
+          <CheckSquare size={48} color={colors.background} strokeWidth={1.5} />
+        </LinearGradient>
         <Text style={styles.loadingText}>Loading your tasks...</Text>
       </View>
     );
@@ -250,14 +260,24 @@ export default function TasksScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <LinearGradient colors={colors.gradient} style={styles.header}>
-        <Text style={styles.headerTitle}>AI To-Do List</Text>
-        <Text style={styles.headerSubtitle}>Smart task management with natural language</Text>
+      <LinearGradient 
+        colors={colors.gradient} 
+        style={styles.header}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>AI To-Do List</Text>
+          <Text style={styles.headerSubtitle}>Smart task management with natural language</Text>
+        </View>
 
         {/* AI Task Input */}
         <View style={styles.aiContainer}>
-          <View style={styles.aiInputContainer}>
-            <Sparkles size={20} color="rgba(255, 255, 255, 0.7)" />
+          <LinearGradient
+            colors={['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0.1)']}
+            style={styles.aiInputContainer}
+          >
+            <Sparkles size={20} color="rgba(255, 255, 255, 0.8)" strokeWidth={1.5} />
             <TextInput
               style={styles.aiInput}
               placeholder="Remind me to call John tomorrow"
@@ -266,13 +286,19 @@ export default function TasksScreen() {
               onChangeText={setAiInput}
               onSubmitEditing={handleAITaskParsing}
             />
-          </View>
+          </LinearGradient>
           <TouchableOpacity
             style={styles.aiButton}
             onPress={handleAITaskParsing}
             disabled={!aiInput.trim()}
+            activeOpacity={0.8}
           >
-            <Plus size={20} color={colors.background} />
+            <LinearGradient
+              colors={aiInput.trim() ? ['rgba(255, 255, 255, 0.3)', 'rgba(255, 255, 255, 0.2)'] : ['rgba(255, 255, 255, 0.1)', 'rgba(255, 255, 255, 0.05)']}
+              style={styles.aiButtonGradient}
+            >
+              <Plus size={20} color={colors.background} strokeWidth={2} />
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </LinearGradient>
@@ -281,20 +307,29 @@ export default function TasksScreen() {
       <View style={styles.content}>
         {/* Stats */}
         <View style={styles.stats}>
-          <View style={styles.statCard}>
+          <LinearGradient
+            colors={colors.cardGradient}
+            style={styles.statCard}
+          >
             <Text style={styles.statNumber}>{pendingTasks.length}</Text>
             <Text style={styles.statLabel}>Pending</Text>
-          </View>
-          <View style={styles.statCard}>
+          </LinearGradient>
+          <LinearGradient
+            colors={colors.cardGradient}
+            style={styles.statCard}
+          >
             <Text style={styles.statNumber}>{completedTasks.length}</Text>
             <Text style={styles.statLabel}>Completed</Text>
-          </View>
-          <View style={styles.statCard}>
+          </LinearGradient>
+          <LinearGradient
+            colors={colors.cardGradient}
+            style={styles.statCard}
+          >
             <Text style={styles.statNumber}>
               {pendingTasks.filter((t) => t.due_date && isOverdue(t.due_date)).length}
             </Text>
             <Text style={styles.statLabel}>Overdue</Text>
-          </View>
+          </LinearGradient>
         </View>
 
         {/* Tasks List */}
@@ -304,14 +339,22 @@ export default function TasksScreen() {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Pending Tasks</Text>
               {pendingTasks.map((task) => (
-                <View key={task.id} style={styles.taskCard}>
+                <LinearGradient
+                  key={task.id}
+                  colors={colors.cardGradient}
+                  style={styles.taskCard}
+                >
                   <TouchableOpacity
                     style={styles.taskCheckbox}
                     onPress={() => toggleTask(task.id, task.completed)}
+                    activeOpacity={0.7}
                   >
-                    <View style={[styles.checkbox, task.completed && styles.checkboxChecked]}>
-                      {task.completed && <CheckSquare size={16} color={colors.background} />}
-                    </View>
+                    <LinearGradient
+                      colors={task.completed ? [colors.primary, colors.primaryLight] : ['transparent', 'transparent']}
+                      style={[styles.checkbox, task.completed && styles.checkboxChecked]}
+                    >
+                      {task.completed && <Check size={16} color={colors.background} strokeWidth={2} />}
+                    </LinearGradient>
                   </TouchableOpacity>
 
                   <View style={styles.taskContent}>
@@ -327,7 +370,7 @@ export default function TasksScreen() {
                           style={styles.actionButton}
                           onPress={() => deleteTask(task.id)}
                         >
-                          <Trash2 size={16} color={colors.textLight} />
+                          <Trash2 size={16} color={colors.textLight} strokeWidth={1.5} />
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -342,6 +385,7 @@ export default function TasksScreen() {
                           <Calendar
                             size={14}
                             color={isOverdue(task.due_date) ? colors.error : colors.textSecondary}
+                            strokeWidth={1.5}
                           />
                           <Text
                             style={[styles.metaText, isOverdue(task.due_date) && styles.overdueText]}
@@ -358,7 +402,7 @@ export default function TasksScreen() {
                       </View>
                     </View>
                   </View>
-                </View>
+                </LinearGradient>
               ))}
             </View>
           )}
@@ -368,14 +412,22 @@ export default function TasksScreen() {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Completed Tasks</Text>
               {completedTasks.map((task) => (
-                <View key={task.id} style={[styles.taskCard, styles.completedTaskCard]}>
+                <LinearGradient
+                  key={task.id}
+                  colors={colors.cardGradient}
+                  style={[styles.taskCard, styles.completedTaskCard]}
+                >
                   <TouchableOpacity
                     style={styles.taskCheckbox}
                     onPress={() => toggleTask(task.id, task.completed)}
+                    activeOpacity={0.7}
                   >
-                    <View style={[styles.checkbox, styles.checkboxChecked]}>
-                      <CheckSquare size={16} color={colors.background} />
-                    </View>
+                    <LinearGradient
+                      colors={[colors.primary, colors.primaryLight]}
+                      style={[styles.checkbox, styles.checkboxChecked]}
+                    >
+                      <Check size={16} color={colors.background} strokeWidth={2} />
+                    </LinearGradient>
                   </TouchableOpacity>
 
                   <View style={styles.taskContent}>
@@ -385,48 +437,86 @@ export default function TasksScreen() {
                         style={styles.actionButton}
                         onPress={() => deleteTask(task.id)}
                       >
-                        <Trash2 size={16} color={colors.textLight} />
+                        <Trash2 size={16} color={colors.textLight} strokeWidth={1.5} />
                       </TouchableOpacity>
                     </View>
                   </View>
-                </View>
+                </LinearGradient>
               ))}
             </View>
           )}
 
           {/* Empty State */}
           {tasks.length === 0 && (
-            <View style={styles.emptyContainer}>
-              <CheckSquare size={64} color={colors.textLight} />
+            <LinearGradient
+              colors={colors.cardGradient}
+              style={styles.emptyContainer}
+            >
+              <View style={styles.emptyIconContainer}>
+                <CheckSquare size={64} color={colors.textLight} strokeWidth={1.5} />
+              </View>
               <Text style={styles.emptyTitle}>No tasks yet</Text>
               <Text style={styles.emptySubtitle}>
                 Use AI to add your first task with natural language
               </Text>
-            </View>
+              <TouchableOpacity 
+                style={styles.emptyAction}
+                onPress={() => setShowAddModal(true)}
+              >
+                <Plus size={16} color={colors.primary} strokeWidth={2} />
+                <Text style={styles.emptyActionText}>Add Task</Text>
+              </TouchableOpacity>
+            </LinearGradient>
           )}
         </ScrollView>
 
         {/* Manual Add Button */}
-        <TouchableOpacity style={styles.fabButton} onPress={() => setShowAddModal(true)}>
-          <Plus size={24} color={colors.background} />
+        <TouchableOpacity 
+          style={styles.fabButton} 
+          onPress={() => setShowAddModal(true)}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={[colors.primary, colors.primaryLight]}
+            style={styles.fabGradient}
+          >
+            <Plus size={24} color={colors.background} strokeWidth={2} />
+          </LinearGradient>
         </TouchableOpacity>
       </View>
 
       {/* Add Task Modal */}
       <Modal visible={showAddModal} animationType="slide" presentationStyle="pageSheet">
-        <View style={styles.modal}>
+        <LinearGradient
+          colors={colors.gradientSubtle}
+          style={styles.modal}
+        >
           <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowAddModal(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
+            <TouchableOpacity 
+              onPress={() => setShowAddModal(false)}
+              style={styles.modalCloseButton}
+            >
+              <X size={24} color={colors.textSecondary} strokeWidth={2} />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Add Task</Text>
-            <TouchableOpacity onPress={addTask}>
-              <Text style={styles.saveText}>Save</Text>
+            <TouchableOpacity 
+              onPress={addTask}
+              style={styles.modalSaveButton}
+            >
+              <LinearGradient
+                colors={[colors.primary, colors.primaryLight]}
+                style={styles.modalSaveGradient}
+              >
+                <Text style={styles.saveText}>Save</Text>
+              </LinearGradient>
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.modalContent}>
-            <View style={styles.inputGroup}>
+          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+            <LinearGradient
+              colors={colors.cardGradient}
+              style={styles.inputGroup}
+            >
               <Text style={styles.inputLabel}>Task Title *</Text>
               <TextInput
                 style={styles.textInput}
@@ -435,9 +525,12 @@ export default function TasksScreen() {
                 value={newTask.title}
                 onChangeText={(text) => setNewTask({ ...newTask, title: text })}
               />
-            </View>
+            </LinearGradient>
 
-            <View style={styles.inputGroup}>
+            <LinearGradient
+              colors={colors.cardGradient}
+              style={styles.inputGroup}
+            >
               <Text style={styles.inputLabel}>Description</Text>
               <TextInput
                 style={[styles.textInput, styles.textArea]}
@@ -448,9 +541,12 @@ export default function TasksScreen() {
                 multiline
                 numberOfLines={3}
               />
-            </View>
+            </LinearGradient>
 
-            <View style={styles.inputGroup}>
+            <LinearGradient
+              colors={colors.cardGradient}
+              style={styles.inputGroup}
+            >
               <Text style={styles.inputLabel}>Priority</Text>
               <View style={styles.priorityButtons}>
                 {['low', 'medium', 'high'].map((priority) => (
@@ -462,6 +558,7 @@ export default function TasksScreen() {
                       { borderColor: getPriorityColor(priority) },
                     ]}
                     onPress={() => setNewTask({ ...newTask, priority: priority as any })}
+                    activeOpacity={0.7}
                   >
                     <Text
                       style={[
@@ -474,16 +571,20 @@ export default function TasksScreen() {
                   </TouchableOpacity>
                 ))}
               </View>
-            </View>
+            </LinearGradient>
 
             {/* Due Date Picker */}
-            <View style={styles.inputGroup}>
+            <LinearGradient
+              colors={colors.cardGradient}
+              style={styles.inputGroup}
+            >
               <Text style={styles.inputLabel}>Due Date</Text>
               <TouchableOpacity
                 style={styles.datePickerButton}
                 onPress={() => setShowDatePicker(true)}
+                activeOpacity={0.7}
               >
-                <Calendar size={16} color={colors.textSecondary} />
+                <Calendar size={16} color={colors.textSecondary} strokeWidth={1.5} />
                 <Text style={styles.datePickerText}>
                   {newTask.due_date
                     ? new Date(newTask.due_date).toDateString()
@@ -504,9 +605,9 @@ export default function TasksScreen() {
                   }}
                 />
               )}
-            </View>
+            </LinearGradient>
           </ScrollView>
-        </View>
+        </LinearGradient>
       </Modal>
     </View>
   );
@@ -524,26 +625,41 @@ const createStyles = (colors: any) =>
       alignItems: 'center',
       backgroundColor: colors.background,
     },
+    loadingGradient: {
+      width: 80,
+      height: 80,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 20,
+    },
     loadingText: {
       fontSize: 16,
       color: colors.textSecondary,
-      marginTop: 16,
+      fontWeight: '500',
     },
     header: {
       paddingTop: 60,
-      paddingBottom: 24,
+      paddingBottom: 32,
       paddingHorizontal: 24,
+      borderBottomLeftRadius: 32,
+      borderBottomRightRadius: 32,
+    },
+    headerContent: {
+      marginBottom: 24,
     },
     headerTitle: {
-      fontSize: 28,
-      fontWeight: 'bold',
+      fontSize: 32,
+      fontWeight: '700',
       color: colors.background,
-      marginBottom: 4,
+      marginBottom: 8,
+      letterSpacing: -0.5,
     },
     headerSubtitle: {
       fontSize: 16,
-      color: 'rgba(255, 255, 255, 0.8)',
-      marginBottom: 20,
+      color: 'rgba(255, 255, 255, 0.85)',
+      fontWeight: '400',
+      lineHeight: 22,
     },
     aiContainer: {
       flexDirection: 'row',
@@ -554,9 +670,14 @@ const createStyles = (colors: any) =>
       flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: 'rgba(255, 255, 255, 0.15)',
-      borderRadius: 16,
-      paddingHorizontal: 16,
+      borderRadius: 20,
+      paddingHorizontal: 20,
+      paddingVertical: 4,
+      shadowColor: colors.shadowMedium,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 4,
     },
     aiInput: {
       flex: 1,
@@ -564,82 +685,97 @@ const createStyles = (colors: any) =>
       color: colors.background,
       fontSize: 16,
       marginLeft: 12,
+      fontWeight: '500',
     },
     aiButton: {
+      borderRadius: 16,
+      overflow: 'hidden',
+    },
+    aiButtonGradient: {
       width: 48,
       height: 48,
-      backgroundColor: 'rgba(255, 255, 255, 0.2)',
-      borderRadius: 16,
       alignItems: 'center',
       justifyContent: 'center',
     },
     content: {
       flex: 1,
       paddingHorizontal: 24,
-      paddingTop: 16,
+      paddingTop: 24,
     },
     stats: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      marginBottom: 16,
+      marginBottom: 24,
+      gap: 12,
     },
     statCard: {
       flex: 1,
-      backgroundColor: colors.surface,
-      marginHorizontal: 4,
       borderRadius: 16,
-      padding: 12,
+      padding: 20,
       alignItems: 'center',
+      shadowColor: colors.shadowMedium,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 12,
+      elevation: 6,
+      borderWidth: 1,
+      borderColor: colors.border,
     },
     statNumber: {
       fontSize: 28,
-      fontWeight: 'bold',
+      fontWeight: '700',
       color: colors.primary,
+      marginBottom: 4,
     },
     statLabel: {
       fontSize: 14,
       color: colors.textSecondary,
-      marginTop: 4,
+      fontWeight: '600',
     },
     tasksList: {
       flex: 1,
     },
     section: {
-      marginBottom: 20,
+      marginBottom: 24,
     },
     sectionTitle: {
       fontSize: 22,
-      fontWeight: 'bold',
-      marginBottom: 12,
-      color: colors.textPrimary,
+      fontWeight: '700',
+      marginBottom: 16,
+      color: colors.text,
+      letterSpacing: -0.3,
     },
     taskCard: {
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      padding: 12,
+      borderRadius: 16,
+      padding: 20,
       marginBottom: 12,
       flexDirection: 'row',
       alignItems: 'flex-start',
-      gap: 12,
+      gap: 16,
+      shadowColor: colors.shadowMedium,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      elevation: 4,
+      borderWidth: 1,
+      borderColor: colors.border,
     },
     completedTaskCard: {
-      opacity: 0.6,
+      opacity: 0.7,
     },
     taskCheckbox: {
-      marginTop: 4,
+      marginTop: 2,
     },
     checkbox: {
       width: 24,
       height: 24,
-      borderRadius: 6,
-      borderWidth: 1.5,
+      borderRadius: 8,
+      borderWidth: 2,
       borderColor: colors.border,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: colors.surface,
     },
     checkboxChecked: {
-      backgroundColor: colors.primary,
       borderColor: colors.primary,
     },
     taskContent: {
@@ -649,12 +785,12 @@ const createStyles = (colors: any) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 4,
+      marginBottom: 8,
     },
     taskTitle: {
       fontSize: 18,
       fontWeight: '600',
-      color: colors.textPrimary,
+      color: colors.text,
       flexShrink: 1,
     },
     taskTitleCompleted: {
@@ -664,7 +800,7 @@ const createStyles = (colors: any) =>
     taskActions: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
+      gap: 12,
     },
     actionButton: {
       padding: 6,
@@ -672,7 +808,8 @@ const createStyles = (colors: any) =>
     taskDescription: {
       fontSize: 14,
       color: colors.textSecondary,
-      marginBottom: 8,
+      marginBottom: 12,
+      lineHeight: 20,
     },
     taskMeta: {
       flexDirection: 'row',
@@ -687,98 +824,146 @@ const createStyles = (colors: any) =>
     metaText: {
       fontSize: 12,
       color: colors.textSecondary,
+      fontWeight: '500',
     },
     overdueText: {
       color: colors.error,
-      fontWeight: 'bold',
+      fontWeight: '600',
     },
     priorityDot: {
-      width: 12,
-      height: 12,
-      borderRadius: 6,
+      width: 8,
+      height: 8,
+      borderRadius: 4,
     },
     emptyContainer: {
-      flex: 1,
-      justifyContent: 'center',
+      borderRadius: 20,
+      padding: 40,
       alignItems: 'center',
-      paddingVertical: 48,
+      shadowColor: colors.shadowMedium,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 12,
+      elevation: 6,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    emptyIconContainer: {
+      width: 80,
+      height: 80,
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 20,
     },
     emptyTitle: {
       fontSize: 20,
-      fontWeight: 'bold',
+      fontWeight: '600',
       color: colors.textSecondary,
-      marginTop: 12,
+      marginBottom: 8,
     },
     emptySubtitle: {
       fontSize: 14,
       color: colors.textLight,
-      marginTop: 4,
       textAlign: 'center',
-      maxWidth: 220,
+      lineHeight: 20,
+      marginBottom: 24,
+    },
+    emptyAction: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.primary + '15',
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+    },
+    emptyActionText: {
+      fontSize: 14,
+      color: colors.primary,
+      fontWeight: '600',
+      marginLeft: 6,
     },
     fabButton: {
       position: 'absolute',
       bottom: 32,
       right: 32,
+      borderRadius: 20,
+      overflow: 'hidden',
+      shadowColor: colors.shadowMedium,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.3,
+      shadowRadius: 16,
+      elevation: 12,
+    },
+    fabGradient: {
       width: 56,
       height: 56,
-      borderRadius: 28,
-      backgroundColor: colors.primary,
       justifyContent: 'center',
       alignItems: 'center',
-      elevation: 4,
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.3,
-      shadowRadius: 4,
-      shadowOffset: { width: 0, height: 2 },
     },
     modal: {
       flex: 1,
-      backgroundColor: colors.background,
-      paddingTop: 48,
-      paddingHorizontal: 24,
     },
     modalHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 24,
+      paddingTop: 60,
+      paddingHorizontal: 24,
+      paddingBottom: 20,
     },
-    cancelText: {
-      color: colors.error,
-      fontSize: 16,
-      fontWeight: 'bold',
-    },
-    saveText: {
-      color: colors.primary,
-      fontSize: 16,
-      fontWeight: 'bold',
+    modalCloseButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     modalTitle: {
       fontSize: 20,
-      fontWeight: 'bold',
-      color: colors.textPrimary,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    modalSaveButton: {
+      borderRadius: 12,
+      overflow: 'hidden',
+    },
+    modalSaveGradient: {
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+    },
+    saveText: {
+      fontSize: 16,
+      color: colors.background,
+      fontWeight: '600',
     },
     modalContent: {
       flex: 1,
+      paddingHorizontal: 24,
     },
     inputGroup: {
-      marginBottom: 20,
-    },
-    inputLabel: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      marginBottom: 8,
-    },
-    textInput: {
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 16,
+      shadowColor: colors.shadowMedium,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      elevation: 4,
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 12,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
+    },
+    inputLabel: {
       fontSize: 16,
-      color: colors.textPrimary,
-      backgroundColor: colors.surface,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 12,
+    },
+    textInput: {
+      fontSize: 16,
+      color: colors.text,
+      fontWeight: '500',
     },
     textArea: {
       height: 80,
@@ -790,11 +975,12 @@ const createStyles = (colors: any) =>
     },
     priorityButton: {
       flex: 1,
-      borderWidth: 1.5,
+      borderWidth: 2,
       borderRadius: 12,
       paddingVertical: 12,
       alignItems: 'center',
       justifyContent: 'center',
+      backgroundColor: colors.surface,
     },
     priorityButtonActive: {
       backgroundColor: 'rgba(0,0,0,0.05)',
@@ -805,18 +991,14 @@ const createStyles = (colors: any) =>
       color: colors.textSecondary,
     },
     datePickerButton: {
-      height: 48,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.surface,
-      paddingHorizontal: 16,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
+      paddingVertical: 12,
     },
     datePickerText: {
       fontSize: 16,
       color: colors.textSecondary,
+      fontWeight: '500',
     },
   });

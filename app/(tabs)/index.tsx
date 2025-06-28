@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   RefreshControl,
+  Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -13,7 +14,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { getSupabase, Memory, Task } from '@/lib/supabase';
-import { Brain, MessageCircle, SquareCheck as CheckSquare, Sparkles, Calendar, Target, TrendingUp } from 'lucide-react-native';
+import { Brain, MessageCircle, SquareCheck as CheckSquare, Sparkles, Calendar, Target, TrendingUp, Plus, ArrowRight } from 'lucide-react-native';
+
+const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -28,9 +31,6 @@ export default function HomeScreen() {
       loadData();
     }
   }, [user]);
-
-  // Remove the redirect logic from here since it's handled in index.tsx
-  // This allows the home screen to render properly for users with access
 
   const loadData = async () => {
     try {
@@ -83,6 +83,12 @@ export default function HomeScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
+        <LinearGradient
+          colors={colors.gradient}
+          style={styles.loadingGradient}
+        >
+          <Brain size={48} color={colors.background} strokeWidth={1.5} />
+        </LinearGradient>
         <Text style={styles.loadingText}>Loading your cognitive twin...</Text>
       </View>
     );
@@ -94,14 +100,17 @@ export default function HomeScreen() {
       refreshControl={
         <RefreshControl refreshing={loading} onRefresh={loadData} />
       }
+      showsVerticalScrollIndicator={false}
     >
       {/* Header */}
       <LinearGradient
         colors={colors.gradient}
         style={styles.header}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
       >
         <View style={styles.headerContent}>
-          <View>
+          <View style={styles.headerText}>
             <Text style={styles.greeting}>
               {getGreeting()}, {user?.first_name} 👋
             </Text>
@@ -109,49 +118,74 @@ export default function HomeScreen() {
               Ready to expand your cognitive abilities?
             </Text>
           </View>
-          <View style={styles.brainIcon}>
-            <Brain size={32} color={colors.background} strokeWidth={2} />
+          <View style={styles.brainIconContainer}>
+            <LinearGradient
+              colors={['rgba(255, 255, 255, 0.25)', 'rgba(255, 255, 255, 0.15)']}
+              style={styles.brainIcon}
+            >
+              <Brain size={28} color={colors.background} strokeWidth={1.5} />
+            </LinearGradient>
           </View>
         </View>
 
         {/* Trial Banner */}
         {status.isTrialing && (
           <View style={styles.trialBanner}>
-            <Sparkles size={16} color={colors.accent} />
-            <Text style={styles.trialText}>
-              {status.trialDaysLeft} days left in your free trial
-            </Text>
+            <LinearGradient
+              colors={['rgba(255, 255, 255, 0.2)', 'rgba(255, 255, 255, 0.1)']}
+              style={styles.trialBannerGradient}
+            >
+              <Sparkles size={16} color={colors.background} />
+              <Text style={styles.trialText}>
+                {status.trialDaysLeft} days left in your free trial
+              </Text>
+            </LinearGradient>
           </View>
         )}
       </LinearGradient>
 
       {/* Quick Actions */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.sectionDivider} />
+        </View>
         <View style={styles.quickActions}>
           <TouchableOpacity
             style={styles.actionCard}
             onPress={() => router.push('/(tabs)/memory')}
+            activeOpacity={0.8}
           >
             <LinearGradient
               colors={[colors.primary, colors.primaryLight]}
               style={styles.actionGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
             >
-              <MessageCircle size={24} color={colors.background} />
+              <View style={styles.actionIconContainer}>
+                <MessageCircle size={24} color={colors.background} strokeWidth={1.5} />
+              </View>
               <Text style={styles.actionText}>Ask MemorySphere</Text>
+              <Text style={styles.actionSubtext}>Chat with your AI twin</Text>
             </LinearGradient>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.actionCard}
             onPress={() => router.push('/(tabs)/tasks')}
+            activeOpacity={0.8}
           >
             <LinearGradient
               colors={[colors.secondary, colors.secondaryLight]}
               style={styles.actionGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
             >
-              <CheckSquare size={24} color={colors.background} />
+              <View style={styles.actionIconContainer}>
+                <CheckSquare size={24} color={colors.background} strokeWidth={1.5} />
+              </View>
               <Text style={styles.actionText}>Add Task</Text>
+              <Text style={styles.actionSubtext}>Smart to-do management</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -161,17 +195,27 @@ export default function HomeScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Today's Smart Memory</Text>
-          <TouchableOpacity onPress={() => router.push('/(tabs)/memory')}>
+          <TouchableOpacity 
+            onPress={() => router.push('/(tabs)/memory')}
+            style={styles.seeAllButton}
+          >
             <Text style={styles.seeAllText}>See All</Text>
+            <ArrowRight size={16} color={colors.primary} strokeWidth={2} />
           </TouchableOpacity>
         </View>
 
         {memories.length > 0 ? (
-          <View style={styles.memoryCard}>
+          <LinearGradient
+            colors={colors.cardGradient}
+            style={styles.memoryCard}
+          >
             <View style={styles.memoryHeader}>
-              <View style={styles.memoryIcon}>
-                <Brain size={20} color={colors.primary} />
-              </View>
+              <LinearGradient
+                colors={[colors.primary + '20', colors.primary + '10']}
+                style={styles.memoryIcon}
+              >
+                <Brain size={20} color={colors.primary} strokeWidth={1.5} />
+              </LinearGradient>
               <View style={styles.memoryInfo}>
                 <Text style={styles.memoryTitle}>{memories[0].title}</Text>
                 <Text style={styles.memoryDate}>
@@ -185,21 +229,37 @@ export default function HomeScreen() {
             {memories[0].tags.length > 0 && (
               <View style={styles.tags}>
                 {memories[0].tags.slice(0, 3).map((tag, index) => (
-                  <View key={index} style={styles.tag}>
+                  <LinearGradient
+                    key={index}
+                    colors={[colors.primary + '15', colors.primary + '08']}
+                    style={styles.tag}
+                  >
                     <Text style={styles.tagText}>#{tag}</Text>
-                  </View>
+                  </LinearGradient>
                 ))}
               </View>
             )}
-          </View>
+          </LinearGradient>
         ) : (
-          <View style={styles.emptyCard}>
-            <Brain size={32} color={colors.textLight} />
+          <LinearGradient
+            colors={colors.cardGradient}
+            style={styles.emptyCard}
+          >
+            <View style={styles.emptyIconContainer}>
+              <Brain size={32} color={colors.textLight} strokeWidth={1.5} />
+            </View>
             <Text style={styles.emptyText}>No memories yet</Text>
             <Text style={styles.emptySubtext}>
               Start by adding your first memory or conversation
             </Text>
-          </View>
+            <TouchableOpacity 
+              style={styles.emptyAction}
+              onPress={() => router.push('/(tabs)/memory')}
+            >
+              <Plus size={16} color={colors.primary} strokeWidth={2} />
+              <Text style={styles.emptyActionText}>Add Memory</Text>
+            </TouchableOpacity>
+          </LinearGradient>
         )}
       </View>
 
@@ -207,64 +267,109 @@ export default function HomeScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Top Tasks for Today</Text>
-          <TouchableOpacity onPress={() => router.push('/(tabs)/tasks')}>
+          <TouchableOpacity 
+            onPress={() => router.push('/(tabs)/tasks')}
+            style={styles.seeAllButton}
+          >
             <Text style={styles.seeAllText}>See All</Text>
+            <ArrowRight size={16} color={colors.primary} strokeWidth={2} />
           </TouchableOpacity>
         </View>
 
         {tasks.length > 0 ? (
           <View style={styles.tasksList}>
             {tasks.slice(0, 3).map((task) => (
-              <View key={task.id} style={styles.taskCard}>
+              <LinearGradient
+                key={task.id}
+                colors={colors.cardGradient}
+                style={styles.taskCard}
+              >
                 <View style={styles.taskHeader}>
-                  <View style={[styles.priorityDot, { backgroundColor: getPriorityColor(task.priority) }]} />
-                  <Text style={styles.taskTitle}>{task.title}</Text>
+                  <View style={styles.taskLeft}>
+                    <View style={[styles.priorityDot, { backgroundColor: getPriorityColor(task.priority) }]} />
+                    <Text style={styles.taskTitle}>{task.title}</Text>
+                  </View>
                 </View>
                 {task.due_date && (
                   <View style={styles.taskMeta}>
-                    <Calendar size={14} color={colors.textSecondary} />
+                    <Calendar size={14} color={colors.textSecondary} strokeWidth={1.5} />
                     <Text style={styles.taskDate}>
                       {new Date(task.due_date).toLocaleDateString()}
                     </Text>
                   </View>
                 )}
-              </View>
+              </LinearGradient>
             ))}
           </View>
         ) : (
-          <View style={styles.emptyCard}>
-            <CheckSquare size={32} color={colors.textLight} />
+          <LinearGradient
+            colors={colors.cardGradient}
+            style={styles.emptyCard}
+          >
+            <View style={styles.emptyIconContainer}>
+              <CheckSquare size={32} color={colors.textLight} strokeWidth={1.5} />
+            </View>
             <Text style={styles.emptyText}>No tasks yet</Text>
             <Text style={styles.emptySubtext}>
               Add your first task to get started
             </Text>
-          </View>
+            <TouchableOpacity 
+              style={styles.emptyAction}
+              onPress={() => router.push('/(tabs)/tasks')}
+            >
+              <Plus size={16} color={colors.primary} strokeWidth={2} />
+              <Text style={styles.emptyActionText}>Add Task</Text>
+            </TouchableOpacity>
+          </LinearGradient>
         )}
       </View>
 
       {/* Stats */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Your Progress</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Your Progress</Text>
+          <View style={styles.sectionDivider} />
+        </View>
         <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Brain size={24} color={colors.primary} />
+          <LinearGradient
+            colors={colors.cardGradient}
+            style={styles.statCard}
+          >
+            <View style={styles.statIconContainer}>
+              <Brain size={24} color={colors.primary} strokeWidth={1.5} />
+            </View>
             <Text style={styles.statNumber}>{memories.length}</Text>
             <Text style={styles.statLabel}>Memories</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Target size={24} color={colors.secondary} />
+          </LinearGradient>
+          
+          <LinearGradient
+            colors={colors.cardGradient}
+            style={styles.statCard}
+          >
+            <View style={styles.statIconContainer}>
+              <Target size={24} color={colors.secondary} strokeWidth={1.5} />
+            </View>
             <Text style={styles.statNumber}>{tasks.length}</Text>
             <Text style={styles.statLabel}>Active Tasks</Text>
-          </View>
-          <View style={styles.statCard}>
-            <TrendingUp size={24} color={colors.success} />
+          </LinearGradient>
+          
+          <LinearGradient
+            colors={colors.cardGradient}
+            style={styles.statCard}
+          >
+            <View style={styles.statIconContainer}>
+              <TrendingUp size={24} color={colors.success} strokeWidth={1.5} />
+            </View>
             <Text style={styles.statNumber}>
               {tasks.filter(t => t.completed).length}
             </Text>
             <Text style={styles.statLabel}>Completed</Text>
-          </View>
+          </LinearGradient>
         </View>
       </View>
+
+      {/* Bottom Spacing */}
+      <View style={styles.bottomSpacing} />
     </ScrollView>
   );
 }
@@ -280,71 +385,117 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.background,
   },
+  loadingGradient: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
   loadingText: {
     fontSize: 16,
     color: colors.textSecondary,
-    marginTop: 16,
+    fontWeight: '500',
   },
   header: {
     paddingTop: 60,
-    paddingBottom: 24,
+    paddingBottom: 32,
     paddingHorizontal: 24,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
   },
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  headerText: {
+    flex: 1,
   },
   greeting: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 32,
+    fontWeight: '700',
     color: colors.background,
-    marginBottom: 4,
+    marginBottom: 8,
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontWeight: '400',
+    lineHeight: 22,
+  },
+  brainIconContainer: {
+    marginLeft: 16,
   },
   brainIcon: {
     width: 56,
     height: 56,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   trialBanner: {
+    alignSelf: 'stretch',
+  },
+  trialBannerGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 16,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   trialText: {
     color: colors.background,
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
     marginLeft: 8,
   },
   section: {
-    padding: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '700',
     color: colors.text,
+    letterSpacing: -0.3,
+  },
+  sectionDivider: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+    marginLeft: 16,
+    opacity: 0.5,
+  },
+  seeAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
   },
   seeAllText: {
     fontSize: 14,
     color: colors.primary,
-    fontWeight: '500',
+    fontWeight: '600',
+    marginRight: 4,
   },
   quickActions: {
     flexDirection: 'row',
@@ -352,61 +503,85 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   actionCard: {
     flex: 1,
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: 'hidden',
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
   },
   actionGradient: {
-    padding: 20,
+    padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 100,
+    minHeight: 140,
+  },
+  actionIconContainer: {
+    width: 48,
+    height: 48,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
   },
   actionText: {
     color: colors.background,
     fontSize: 16,
-    fontWeight: '600',
-    marginTop: 8,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  actionSubtext: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 12,
+    fontWeight: '500',
     textAlign: 'center',
   },
   memoryCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
     borderWidth: 1,
     borderColor: colors.border,
   },
   memoryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   memoryIcon: {
-    width: 36,
-    height: 36,
-    backgroundColor: colors.primaryLight + '20',
-    borderRadius: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 16,
   },
   memoryInfo: {
     flex: 1,
   },
   memoryTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: colors.text,
+    marginBottom: 4,
   },
   memoryDate: {
     fontSize: 12,
     color: colors.textSecondary,
-    marginTop: 2,
+    fontWeight: '500',
   },
   memoryContent: {
     fontSize: 14,
     color: colors.textSecondary,
-    lineHeight: 20,
-    marginBottom: 12,
+    lineHeight: 22,
+    marginBottom: 16,
   },
   tags: {
     flexDirection: 'row',
@@ -414,30 +589,39 @@ const createStyles = (colors: any) => StyleSheet.create({
     gap: 8,
   },
   tag: {
-    backgroundColor: colors.primary + '15',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   tagText: {
     fontSize: 12,
     color: colors.primary,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   tasksList: {
     gap: 12,
   },
   taskCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
     borderWidth: 1,
     borderColor: colors.border,
   },
   taskHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+  },
+  taskLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   priorityDot: {
     width: 8,
@@ -447,7 +631,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   taskTitle: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
     color: colors.text,
     flex: 1,
   },
@@ -458,27 +642,56 @@ const createStyles = (colors: any) => StyleSheet.create({
   taskDate: {
     fontSize: 12,
     color: colors.textSecondary,
-    marginLeft: 4,
+    marginLeft: 6,
+    fontWeight: '500',
   },
   emptyCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 32,
     alignItems: 'center',
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
     borderWidth: 1,
     borderColor: colors.border,
   },
+  emptyIconContainer: {
+    width: 64,
+    height: 64,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
   emptyText: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 18,
+    fontWeight: '600',
     color: colors.textSecondary,
-    marginTop: 12,
+    marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
     color: colors.textLight,
     textAlign: 'center',
-    marginTop: 4,
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  emptyAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary + '15',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  emptyActionText: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: '600',
+    marginLeft: 6,
   },
   statsContainer: {
     flexDirection: 'row',
@@ -486,22 +699,39 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 20,
     alignItems: 'center',
+    shadowColor: colors.shadowMedium,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
     borderWidth: 1,
     borderColor: colors.border,
   },
+  statIconContainer: {
+    width: 48,
+    height: 48,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
   statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 28,
+    fontWeight: '700',
     color: colors.text,
-    marginTop: 8,
+    marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
     color: colors.textSecondary,
-    marginTop: 4,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  bottomSpacing: {
+    height: 32,
   },
 });
