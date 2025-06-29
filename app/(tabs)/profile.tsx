@@ -657,7 +657,7 @@ export default function ProfileScreen() {
               Your AI-powered cognitive twin for memories and productivity
             </Text>
             <Text style={styles.appDescription}>
-              Made with love with bolt.new AI
+              Built with ❤️ using Bolt.new AI
             </Text>
           </LinearGradient>
         </View>
