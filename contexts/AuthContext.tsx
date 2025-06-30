@@ -69,37 +69,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signUp = async (email: string, password: string, firstName: string, lastName: string) => {
-    const supabase = getSupabase();
-    if (!supabase) throw new Error("Supabase client not available");
+  if (data.user) {
+  const trialEndsAt = new Date();
+  trialEndsAt.setDate(trialEndsAt.getDate() + 3);
 
-    const { data, error } = await supabase.auth.signUp({
+  const { error: profileError } = await supabase
+    .from('users')
+    .insert({
+      id: data.user.id,
       email,
-      password,
+      first_name: firstName,
+      last_name: lastName,
+      trial_started_at: new Date().toISOString(),
+      trial_ends_at: trialEndsAt.toISOString(),
     });
 
-    if (error) throw error;
+  if (profileError) {
+    console.error('Error inserting profile:', profileError.message);
+    throw profileError;
+  } else {
+    console.log('Trial ends at:', trialEndsAt.toISOString());
+  }
+}
 
-    if (data.user) {
-      const trialEndsAt = new Date();
-      trialEndsAt.setDate(trialEndsAt.getDate() + 3);
-
-      const { error: profileError } = await supabase
-        .from('users')
-        .insert({
-          id: data.user.id,
-          email,
-          first_name: firstName,
-          last_name: lastName,
-          trial_started_at: new Date().toISOString(),
-          trial_ends_at: trialEndsAt.toISOString(),
-        });
-
-      if (profileError) throw profileError;
-    }
-
-    return data;
-  };
 
   const signIn = async (email: string, password: string) => {
     const supabase = getSupabase();
